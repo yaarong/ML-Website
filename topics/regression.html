@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>רגרסיה · ML Study Hub</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links"><a href="../index.html">בית</a><a href="../quiz.html" class="cta">🎲 חידון</a></nav>
+  </div>
+</header>
+
+<main class="wrap content">
+  <div class="topic-head">
+    <div class="eyebrow">נושא 04 · הרצאה 4</div>
+    <h1>📈 רגרסיה</h1>
+    <p>המודל היסודי בלמידה מונחית לחיזוי ערכים רציפים. נפתור רגרסיה לינארית בצורה סגורה, נראה שהיא הטלה אורתוגונלית, נרחיב לפולינומים ול-Ridge, ונסיים ברגרסיה לוגיסטית לסיווג.</p>
+  </div>
+
+  <div class="goals">
+    <h2>🎯 מטרות הנושא</h2>
+    <ul>
+      <li>לגזור את המשוואות הנורמליות $\hat w=(X^TX)^{-1}X^Ty$ ולהבין למה $\hat y$ הטלה אורתוגונלית.</li>
+      <li>להרחיב לרגרסיה פולינומיאלית ולהבין את Ridge כפתרון לחוסר-הפיכות ו-Overfitting.</li>
+      <li>להבין את רגרסיה לוגיסטית: סיגמואיד, נראות, גזירת הגרדיאנט וכלל העדכון.</li>
+      <li>להבין מדוע רגרסיה לוגיסטית היא מסווג לינארי.</li>
+    </ul>
+  </div>
+
+  <section class="block reveal">
+    <h2>1. רגרסיה לינארית — הפתרון הסגור <span class="tag">משפט + הוכחה</span></h2>
+    <p>מודל: $\hat y_i = w^Tx_i$ (בולעים את ה-Bias לתוך $w$ ע״י הוספת רכיב קבוע 1). בכתיב מטריצי $\hat Y=Xw$, ופונקציית ההפסד $\mathrm{MSE}(w)=\tfrac1n(y-Xw)^T(y-Xw)$.</p>
+    <div class="thm">
+      <span class="lbl">משפט — משוואות נורמליות</span><br>
+      המזעור מתקבל ב-$\;X^TXw=X^Ty\;$, ואם $X^TX$ הפיכה: $\;\hat w=(X^TX)^{-1}X^Ty$.
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה</span><br>
+      נפתח: $\mathrm{MSE}\propto y^Ty - 2w^TX^Ty + w^TX^TXw$ (האיבר $w^TX^Ty$ סקלר ולכן שווה לטרנספוז שלו). גוזרים לפי $w$:
+      $$\nabla_w \mathrm{MSE}\propto -2X^Ty + 2X^TXw = 0 \Rightarrow X^TXw=X^Ty.$$
+      ($\nabla(w^TAw)=2Aw$ עבור $A=X^TX$ סימטרית.) הפונקציה קמורה (ההסיאן $X^TX$ הוא PSD), ולכן זה מינימום גלובלי.
+    </div>
+
+    <div class="thm">
+      <span class="lbl">משפט — $\hat y$ הטלה אורתוגונלית</span><br>
+      וקטור השארית $e=y-\hat y$ מאונך למרחב העמודות של $X$; לכן $\hat y$ היא הנקודה במרחב הקרובה ביותר ל-$y$ (מינימום מרחק).
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה</span><br>
+      $\langle y-\hat y,\hat y\rangle=(y-\hat y)^TX\hat w = y^TX\hat w - \hat w^TX^TX\hat w$. נציב $\hat w=(X^TX)^{-1}X^Ty$: האיבר השני הוא $y^TX(X^TX)^{-1}X^TX\hat w = y^TX\hat w$, ולכן ההפרש אפס. השארית מאונכת למישור ⟹ זו ההטלה, כלומר הפתרון הגאומטרי הקרוב ביותר.
+    </div>
+
+    <div class="run">
+      <div class="step"><b>נתון:</b> נקודות $(1,1),(2,2),(3,2)$. מתאימים $\hat y = w_1 + w_2 x$. מטריצה $X=\begin{pmatrix}1&1\\1&2\\1&3\end{pmatrix}$, $y=(1,2,2)^T$.</div>
+      <div class="step"><b>שלב 1:</b> $X^TX=\begin{pmatrix}3&6\\6&14\end{pmatrix}$, $X^Ty=\begin{pmatrix}5\\11\end{pmatrix}$.</div>
+      <div class="step"><b>שלב 2 — היפוך:</b> $\det=3\cdot14-36=6$, $(X^TX)^{-1}=\tfrac16\begin{pmatrix}14&-6\\-6&3\end{pmatrix}$.</div>
+      <div class="step"><b>שלב 3:</b> $\hat w=\tfrac16\begin{pmatrix}14&-6\\-6&3\end{pmatrix}\begin{pmatrix}5\\11\end{pmatrix}=\tfrac16\begin{pmatrix}70-66\\-30+33\end{pmatrix}=\tfrac16\begin{pmatrix}4\\3\end{pmatrix}=\begin{pmatrix}0.667\\0.5\end{pmatrix}$.</div>
+      <div class="step"><b>מודל:</b> $\hat y = 0.667 + 0.5x$. (בדיקה: ב-$x=2$: $\hat y=1.667$, קרוב ל-2.)</div>
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>2. רגרסיה פולינומיאלית ו-Ridge <span class="tag">הרחבות</span></h2>
+    <p><b>פולינומיאלית:</b> יוצרים תכונות חדשות $x,x^2,\dots,x^k$ — המודל עדיין <b>לינארי בפרמטרים</b>, המטריצה $X$ היא מטריצת ונדרמונדה.</p>
+    <div class="thm">
+      <span class="lbl">Ridge Regression</span><br>
+      מוסיפים קנס: $\hat w_{\text{ridge}}=\arg\min_w \|y-Xw\|^2 + \lambda\|w\|^2$, ומקבלים $\;\hat w=(X^TX+\lambda I)^{-1}X^Ty$. כפי שהוכחנו בנושא 1, $X^TX+\lambda I$ תמיד הפיכה עבור $\lambda>0$ — פותר גם חוסר-הפיכות וגם Overfitting.
+    </div>
+    <div class="proof">
+      <span class="lbl">גזירה</span><br>
+      $\nabla_w[\|y-Xw\|^2+\lambda\|w\|^2] = -2X^Ty+2X^TXw+2\lambda w = 0 \Rightarrow (X^TX+\lambda I)w=X^Ty$.
+    </div>
+    <div class="note">
+      <span class="lbl">פרספקטיבת SVD</span><br>
+      אם $X=UDV^T$, אז $\hat y_{\text{ridge}}=\sum_i u_i\dfrac{\sigma_i^2}{\sigma_i^2+\lambda}u_i^Ty$. כיוונים עם $\sigma_i$ גדול עוברים כמעט במלואם; כיוונים רועשים ($\sigma_i$ קטן) מכווצים לאפס — זהו הפילטור של Ridge.
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> $X^TX=\begin{pmatrix}3&6\\6&14\end{pmatrix}$ מהדוגמה, $X^Ty=(5,11)^T$, $\lambda=1$.</div>
+      <div class="step"><b>שלב 1:</b> $X^TX+I=\begin{pmatrix}4&6\\6&15\end{pmatrix}$, $\det=60-36=24$.</div>
+      <div class="step"><b>שלב 2:</b> $\hat w=\tfrac1{24}\begin{pmatrix}15&-6\\-6&4\end{pmatrix}\begin{pmatrix}5\\11\end{pmatrix}=\tfrac1{24}\begin{pmatrix}75-66\\-30+44\end{pmatrix}=\tfrac1{24}\begin{pmatrix}9\\14\end{pmatrix}\approx\begin{pmatrix}0.375\\0.583\end{pmatrix}$.</div>
+      <div class="step"><b>שים לב:</b> המקדמים "נמשכו" מעט לכיוון אפס לעומת הפתרון הרגיל — זו הרגולריזציה בפעולה.</div>
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>3. רגרסיה לוגיסטית <span class="tag">סיווג הסתברותי</span></h2>
+    <p>הסיגמואיד ממפה כל מספר ל-$[0,1]$: $\;\sigma(z)=\dfrac{1}{1+e^{-z}}$, עם $\sigma(0)=\tfrac12$, ונגזרת נוחה $\sigma'(z)=\sigma(z)(1-\sigma(z))$. הפלט: $\hat y=P(y=1|x)=\sigma(w^Tx)$.</p>
+    <div class="thm">
+      <span class="lbl">גזירת הגרדיאנט (Cross-Entropy)</span><br>
+      $\;\nabla_w \mathcal L = -\sum_{i=1}^n x_i\,(y_i-\sigma(w^Tx_i))\;$, ולכן כלל העדכון: $w_{t+1}=w_t+\eta\sum_i x_i(y_i-\hat y_i)$.
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה (לדגימה בודדת)</span><br>
+      Log-loss: $L_i=-[y_i\ln\sigma_i+(1-y_i)\ln(1-\sigma_i)]$ עם $\sigma_i=\sigma(w^Tx_i)$. לפי כלל השרשרת ו-$\sigma'=\sigma(1-\sigma)$:
+      $$\nabla L_i = -\Big[\tfrac{y_i}{\sigma_i}\sigma_i(1-\sigma_i) - \tfrac{1-y_i}{1-\sigma_i}\sigma_i(1-\sigma_i)\Big]x_i = (\sigma_i - y_i)x_i.$$
+      פשוט מאוד: השגיאה $(\hat y - y)$ כפול הקלט.
+    </div>
+    <div class="note">
+      <span class="lbl">מדוע מסווג לינארי?</span><br>
+      כלל ההחלטה $P(y=1|x)>P(y=0|x)$ שקול ל-$\sigma(w^Tx)>\tfrac12$ שקול ל-$w^Tx>0$ — גבול ההחלטה הוא <b>קו/על-מישור לינארי</b>. ההבדל מהפרספטרון: המעבר ליד הקו הדרגתי (רך) ולא חד.
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> $w=(0,0)$, דגימה $x=(1,2)$ (הרכיב הראשון הוא ה-bias), $y=1$, $\eta=0.5$.</div>
+      <div class="step"><b>חיזוי:</b> $w^Tx=0 \Rightarrow \sigma(0)=0.5=\hat y$.</div>
+      <div class="step"><b>גרדיאנט:</b> $(\sigma-y)x=(0.5-1)(1,2)=(-0.5,-1)$.</div>
+      <div class="step"><b>עדכון:</b> $w \leftarrow w - \eta(\sigma-y)x = (0,0) - 0.5(-0.5,-1) = (0.25, 0.5)$.</div>
+      <div class="step"><b>בדיקה:</b> כעת $w^Tx=0.25+1=1.25>0 \Rightarrow \sigma(1.25)\approx0.777$ — קרוב יותר ל-1. המודל למד לכיוון הנכון. ✓</div>
+    </div>
+  </section>
+
+  <div id="tf" class="tf-quiz reveal"></div>
+
+  <div class="topic-nav">
+    <a class="btn" href="estimation.html">→ הקודם: הערכת פרמטרים</a>
+    <a class="btn primary" href="linear-classification.html">הבא: סיווג לינארי ←</a>
+  </div>
+</main>
+
+<footer><div class="wrap">ML Study Hub · נושא 4 מתוך 14</div></footer>
+
+<script src="../js/site.js"></script>
+<script>
+TFQuiz.render('#tf', [
+  { q: "הפתרון הסגור של רגרסיה לינארית הוא $\\hat w=(X^TX)^{-1}X^Ty$.", a: true, e: "אלו המשוואות הנורמליות המתקבלות מגזירת ה-MSE והשוואה לאפס." },
+  { q: "פונקציית ההפסד הריבועית של רגרסיה לינארית עלולה להיות לא-קמורה, ולכן יש בורות מקומיים.", a: false, e: "ההסיאן הוא $X^TX$ שהוא PSD, ולכן הפונקציה קמורה — כל מינימום גלובלי." },
+  { q: "וקטור השארית $y-\\hat y$ מאונך למרחב העמודות של $X$.", a: true, e: "זו התוצאה שהופכת את $\\hat y$ להטלה אורתוגונלית — הנקודה הקרובה ביותר ל-$y$ במרחב." },
+  { q: "רגרסיה פולינומיאלית היא מודל לא-לינארי בפרמטרים.", a: false, e: "היא לינארית ב<b>פרמטרים</b> $w$ (רק התכונות $x,x^2,\\dots$ לא-לינאריות ב-$x$), ולכן נפתרת באותה נוסחה סגורה." },
+  { q: "$X^TX$ תמיד הפיכה, ולכן Ridge מיותרת.", a: false, e: "$X^TX$ אינה הפיכה כאשר $d>n$ או כשיש תלות לינארית בין תכונות (Multicollinearity). Ridge מוסיפה $\\lambda I$ שמבטיחה הפיכות תמיד." },
+  { q: "ב-Ridge, ככל שכיוון בעל ערך סינגולרי $\\sigma_i$ קטן יותר, כך הוא מכווץ יותר לכיוון אפס.", a: true, e: "המקדם $\\sigma_i^2/(\\sigma_i^2+\\lambda)$ קטן עבור $\\sigma_i$ קטן — כיוונים רועשים מסוננים." },
+  { q: "הסיגמואיד מקיים $\\sigma'(z)=\\sigma(z)(1-\\sigma(z))$.", a: true, e: "זו נגזרת ידועה ונוחה של הסיגמואיד, שמפשטת מאוד את גזירת הגרדיאנט." },
+  { q: "הגרדיאנט של רגרסיה לוגיסטית לדגימה בודדת הוא $(\\sigma_i - y_i)x_i$ — השגיאה כפול הקלט.", a: true, e: "למרות המראה המורכב של ה-log-loss, הגזירה מצטמצמת לביטוי אלגנטי זה." },
+  { q: "רגרסיה לוגיסטית היא מסווג לא-לינארי כי היא משתמשת בפונקציה מעריכית.", a: false, e: "היא מסווג <b>לינארי</b>: גבול ההחלטה $w^Tx=0$ הוא על-מישור. הסיגמואיד רק מרכך את המעבר, לא מעקם את הגבול." },
+  { q: "בגבול ההחלטה של רגרסיה לוגיסטית מתקיים $\\sigma(w^Tx)=0.5$.", a: true, e: "$\\sigma=0.5$ בדיוק כאשר $w^Tx=0$ — זהו גבול ההחלטה בין המחלקות." },
+  { q: "רגרסיה לוגיסטית ממקסמת את ה-Likelihood של הנתונים תחת הנחת i.i.d.", a: true, e: "פונקציית המטרה נגזרת ממקסום מכפלת ההסתברויות (או מזעור ה-Negative Log-Likelihood)." },
+  { q: "כלל העדכון $w\\leftarrow w+\\eta\\sum_i x_i(y_i-\\hat y_i)$ מזיז את $w$ בכיוון שמקטין את השגיאה.", a: true, e: "כאשר $\\hat y_i<y_i$ (חזינו נמוך מדי) מוסיפים $x_i$ ומגדילים את החיזוי — בכיוון הנכון." },
+  { q: "אם ה-Prior ברגרסיה לוגיסטית אחיד, כלל העדכון משתנה מהותית.", a: false, e: "רגרסיה לוגיסטית סטנדרטית ממקסמת Likelihood ללא Prior; הוספת Prior גאוסי שקולה לרגולריזציית Ridge, אך הצורה הבסיסית של הגרדיאנט נשמרת." },
+  { q: "פרספקטיבת ה-SVD מראה ש-Ridge משאירה במלואם את הכיוונים החזקים (σ גדול) ומכווצת את החלשים.", a: true, e: "המקדם $\\sigma_i^2/(\\sigma_i^2+\\lambda)\\to1$ כש-$\\sigma_i\\gg\\lambda$ ו-$\\to0$ כש-$\\sigma_i\\ll\\lambda$." },
+  { q: "בדוגמת ה-GD ללוגיסטית, אחרי עדכון אחד עם $y=1$ ו-$\\hat y=0.5$, החיזוי החדש התקרב ל-1.", a: true, e: "אחרי העדכון $w^Tx=1.25$ ו-$\\sigma(1.25)\\approx0.78$ — עלייה מ-0.5, בכיוון הנכון." }
+]);
+</script>
+</body>
+</html>

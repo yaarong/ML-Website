@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>עצי החלטה ואנסמבל · ML Study Hub</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links"><a href="../index.html">בית</a><a href="../quiz.html" class="cta">🎲 חידון</a></nav>
+  </div>
+</header>
+
+<main class="wrap content">
+  <div class="topic-head">
+    <div class="eyebrow">נושא 07 · הרצאה 6</div>
+    <h1>🌳 עצי החלטה ואנסמבל</h1>
+    <p>עצי החלטה — מודל לא-פרמטרי ושקוף שמחלק את מרחב התכונות למלבנים. נבנה אותם באמצעות ID3 ואנטרופיה, נעבור ל-CART ו-Gini, ונשלב עצים חלשים לחזקים עם Boosting ו-XGBoost.</p>
+  </div>
+
+  <div class="goals">
+    <h2>🎯 מטרות הנושא</h2>
+    <ul>
+      <li>להבין עצי החלטה כחלוקה למלבנים מקבילי-צירים ומדוע מציאת העץ האופטימלי NP-קשה.</li>
+      <li>לחשב אנטרופיה ו-Information Gain ולהריץ ID3.</li>
+      <li>להכיר CART, מדד Gini וגיזום (Pruning).</li>
+      <li>להבין Boosting, שאריות (Residuals), Gradient Boosting/XGBoost ו-AdaBoost.</li>
+    </ul>
+  </div>
+
+  <section class="block reveal">
+    <h2>1. עצי החלטה <span class="tag">לא-פרמטרי</span></h2>
+    <ul>
+      <li>מודל <b>לא-לינארי ולא-פרמטרי</b>: לא מניח צורת קשר; מספר הפרמטרים (פיצולים) גדל עם הנתונים.</li>
+      <li>מחלק את מרחב התכונות ל<b>מלבנים מקבילי-צירים</b> — כל פיצול הוא חיתוך ניצב לציר.</li>
+      <li>שקוף ומובן, עובד עם נתונים קטגוריאליים ונומריים.</li>
+      <li>מציאת העץ האופטימלי היא בעיה <b>NP-קשה</b> — לכן משתמשים בחיפוש חמדני Top-Down.</li>
+    </ul>
+    <div class="warn">
+      <span class="lbl">חסרונות</span> נוטים ל-Overfitting (עץ עמוק שמשנן רעש), שונות גבוהה (שינוי קטן ⟵ מבנה שונה), וקושי עם הפרדות אלכסוניות (למשל $y=x$ דורש מדרגות רבות).
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>2. אנטרופיה ו-ID3 <span class="tag">חמדני</span></h2>
+    <div class="def">
+      <span class="lbl">אנטרופיה</span><br>
+      מודדת אי-ודאות (חוסר טוהר): $\;H(S)=-\sum_i p_i\log_2 p_i$. נמוכה = טהור; גבוהה = מבולגן (למשל 50%-50% ⟵ $H=1$).
+    </div>
+    <div class="def">
+      <span class="lbl">Information Gain</span><br>
+      $$IG(S,A)=H(S)-\sum_{v\in\text{Values}(A)}\frac{|S_v|}{|S|}H(S_v).$$
+      ID3 בוחר בכל צומת את התכונה $A$ ש<b>ממקסמת</b> את ה-IG (מקטינה הכי הרבה את אי-הוודאות).
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> 14 דגימות: 9 חיוביות, 5 שליליות. תכונה $A$ מפצלת ל: קבוצה 1 (6+, 2−) וקבוצה 2 (3+, 3−).</div>
+      <div class="step"><b>אנטרופיה מקורית:</b> $H(S)=-\tfrac9{14}\log_2\tfrac9{14}-\tfrac5{14}\log_2\tfrac5{14}=0.410+0.530=0.940$.</div>
+      <div class="step"><b>קבוצה 1 (8 דגימות, 6+2−):</b> $H=-\tfrac68\log_2\tfrac68-\tfrac28\log_2\tfrac28=0.311+0.5=0.811$.</div>
+      <div class="step"><b>קבוצה 2 (6 דגימות, 3+3−):</b> $H=1$ (מפוצל שווה).</div>
+      <div class="step"><b>אנטרופיה משוקללת:</b> $\tfrac8{14}(0.811)+\tfrac6{14}(1)=0.464+0.429=0.892$.</div>
+      <div class="step"><b>Information Gain:</b> $IG=0.940-0.892=0.048$. ככל שגבוה יותר — הפיצול טוב יותר.</div>
+    </div>
+    <pre class="code"><span class="cm"># ID3</span>
+<span class="kw">BuildTree</span>(Data, Features):
+  <span class="kw">if</span> all + : return leaf(+)
+  <span class="kw">if</span> all − : return leaf(−)
+  <span class="kw">if</span> no features: return leaf(majority)
+  A = argmax IG(Data, A)
+  <span class="kw">for</span> each value v of A:
+    subtree = BuildTree(Data[A=v], Features \ {A})</pre>
+  </section>
+
+  <section class="block reveal">
+    <h2>3. CART, Gini וגיזום <span class="tag">CART</span></h2>
+    <div class="def">
+      <span class="lbl">מדד Gini</span><br>
+      $Gini = 1-\sum_{i=1}^c p_i^2$. אם כל הדגימות מאותה מחלקה ⟵ $Gini=0$; מקסימום $\tfrac12$ (בינארי). מהיר יותר מאנטרופיה (אין לוגריתם). CART בונה עץ <b>בינארי</b> ותומך גם במשתנים נומריים.
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> צומת עם 4 חיוביות ו-6 שליליות.</div>
+      <div class="step"><b>Gini:</b> $1-(0.4^2+0.6^2)=1-(0.16+0.36)=1-0.52=0.48$ — טוהר נמוך (קרוב ל-0.5).</div>
+      <div class="step"><b>אם היו 9 חיוביות ו-1 שלילית:</b> $1-(0.81+0.01)=0.18$ — טהור יותר.</div>
+    </div>
+    <div class="note">
+      <span class="lbl">גיזום (Pruning)</span><br>
+      <b>Pre-pruning:</b> עוצרים מראש (הגבלת עומק, מינימום דגימות, סף IG). יעיל אך עלול לעצור מוקדם מדי. <b>Post-pruning:</b> נותנים לעץ לגדול ואז חותכים ענפים שלא פוגעים בדיוק על סט ולידציה — טוב יותר אך יקר יותר.
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>4. Boosting ו-XGBoost <span class="tag">אנסמבל</span></h2>
+    <p><b>Weak Learner:</b> מודל טוב מעט יותר מניחוש אקראי (>50%). Boosting משלב הרבה לומדים חלשים סדרתית ללומד חזק: $\;\text{Strong}=\sum_{m=1}^M \gamma_m h_m(x)$. כל לומד חדש מתקן את שאריות הקודם.</p>
+    <div class="thm">
+      <span class="lbl">Gradient Boosting</span><br>
+      במקום לחזות את היעד מאפס, כל עץ חדש חוזה את ה<b>שאריות</b> $r_i=y_i-f_{old}(x_i)$: מאמנים $h_m=\arg\min_h\sum_i(r_i-h(x_i))^2$, ומעדכנים $f_{new}=f_{old}+\alpha h_m$. זהו Gradient Descent במרחב הפונקציות (עבור MSE, השארית היא בדיוק הגרדיאנט השלילי).
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> מחירים אמיתיים $y=[100,120,150]$; מודל נוכחי ניבא $f_{old}=[90,130,140]$.</div>
+      <div class="step"><b>שלב 1 — שאריות:</b> $r=y-f_{old}=[+10,-10,+10]$.</div>
+      <div class="step"><b>שלב 2:</b> מאמנים עץ חדש $h$ לחזות את $[10,-10,10]$ (ולא את $y$ המקורי!).</div>
+      <div class="step"><b>שלב 3 — עדכון (α=1):</b> אם $h$ ניבא ~$[10,-10,10]$, אז $f_{new}=f_{old}+h\approx[100,120,150]$ — קרוב ליעד. ✓</div>
+    </div>
+    <div class="note">
+      <span class="lbl">AdaBoost</span><br>
+      לעומת GB, ה-AdaBoost פועל בסיווג: מגדיל את משקל הדגימות שסווגו לא-נכון, נותן לכל לומד משקל $\alpha_m$ לפי דיוקו, ומשתמש ב-Stumps (עצים בעומק 1). התחזית: $H(x)=\mathrm{sign}\big(\sum_m\alpha_m h_m(x)\big)$.
+    </div>
+  </section>
+
+  <div id="tf" class="tf-quiz reveal"></div>
+
+  <div class="topic-nav">
+    <a class="btn" href="svm.html">→ הקודם: SVM</a>
+    <a class="btn primary" href="bayes-knn.html">הבא: בייס נאיבי ו-KNN ←</a>
+  </div>
+</main>
+
+<footer><div class="wrap">ML Study Hub · נושא 7 מתוך 14</div></footer>
+
+<script src="../js/site.js"></script>
+<script>
+TFQuiz.render('#tf', [
+  { q: "עצי החלטה יוצרים גבולות הפרדה מקבילי-צירים (מלבנים).", a: true, e: "כל פיצול בודק תכונה בודדת (למשל $x_1>5$), ולכן הגבול הוא קו אנכי/אופקי." },
+  { q: "מציאת עץ ההחלטה האופטימלי היא בעיה פולינומית שנפתרת ביעילות.", a: false, e: "היא NP-קשה, ולכן משתמשים בחיפוש חמדני Top-Down (ID3/CART) שמקבל החלטה מקומית בכל צומת." },
+  { q: "אנטרופיה נמוכה מעידה על סט טהור (ודאות גבוהה).", a: true, e: "$H=0$ כשכל הדגימות מאותה מחלקה; $H=1$ במצב 50%-50% מבולגן." },
+  { q: "ID3 בוחר בכל צומת את התכונה שממזערת את ה-Information Gain.", a: false, e: "ID3 <b>ממקסם</b> את ה-IG — התכונה שמקטינה הכי הרבה את אי-הוודאות." },
+  { q: "עבור צומת עם 3 חיוביות ו-3 שליליות, האנטרופיה היא 1.", a: true, e: "$H=-\\tfrac12\\log_2\\tfrac12-\\tfrac12\\log_2\\tfrac12=1$ — אי-ודאות מקסימלית." },
+  { q: "מדד Gini דורש חישוב לוגריתם, ולכן איטי יותר מאנטרופיה.", a: false, e: "הפוך — Gini לא דורש לוגריתם ($1-\\sum p_i^2$), ולכן מהיר יותר לחישוב." },
+  { q: "עבור מחלקה טהורה לחלוטין, $Gini=0$.", a: true, e: "אם כל הדגימות מאותה מחלקה, $\\sum p_i^2=1$ ולכן $Gini=1-1=0$." },
+  { q: "עצים עמוקים מדי נוטים ל-Overfitting ולשונות גבוהה.", a: true, e: "עץ עמוק משנן את הרעש; שינוי קטן בנתוני האימון עשוי לשנות את כל מבנה העץ." },
+  { q: "Post-pruning נחשב בדרך כלל טוב יותר מ-Pre-pruning, אך יקר יותר חישובית.", a: true, e: "Pre-pruning עלול לעצור מוקדם מדי; Post-pruning רואה את התמונה המלאה, אך דורש לבנות עץ מלא תחילה." },
+  { q: "Weak Learner הוא מודל עם דיוק גבוה מ-50% (טוב מעט יותר מניחוש אקראי).", a: true, e: "זו ההגדרה — לא צריך להיות מדויק מאוד, רק לתפוס אות כלשהו בנתונים." },
+  { q: "ב-Gradient Boosting, כל עץ חדש מנסה לחזות את היעד המקורי $y$ מאפס.", a: false, e: "כל עץ חדש חוזה את ה<b>שאריות</b> $r_i=y_i-f_{old}(x_i)$ של האנסמבל הנוכחי, לא את $y$." },
+  { q: "עבור MSE, השארית $y-f(x)$ שווה (עד קבוע) לגרדיאנט השלילי של ההפסד.", a: true, e: "$\\partial\\ell/\\partial f = f-y$, ולכן הגרדיאנט השלילי הוא $y-f$ = השארית. זה הופך את GB ל-Gradient Descent במרחב הפונקציות." },
+  { q: "AdaBoost נותן לכל לומד חלש אותו משקל קבוע.", a: false, e: "AdaBoost נותן לכל לומד משקל $\\alpha_m$ לפי דיוקו (בניגוד ל-GB שם המשקל $\\alpha$ קבוע), ומגדיל משקל דגימות שסווגו לא נכון." },
+  { q: "Boosting היא שיטת למידה סדרתית שבה כל לומד מתקן את טעויות קודמיו.", a: true, e: "בניגוד לשיטות מקביליות, ב-Boosting הלומדים נוספים אחד-אחד וכל אחד מתמקד בשגיאות שנותרו." },
+  { q: "עצי החלטה מתקשים לייצג הפרדה אלכסונית כמו $y=x$.", a: true, e: "הפרדה אלכסונית דורשת המון מדרגות של מלבנים קטנים — לא יעיל בהשוואה למודל לינארי." }
+]);
+</script>
+</body>
+</html>

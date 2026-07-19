@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Study Hub · מרכז למידת מכונה</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links">
+      <a href="index.html">בית</a>
+      <a href="#topics">נושאים</a>
+      <a href="quiz.html" class="cta">🎲 חידון אקראי</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>מרכז הלמידה ללמידת מכונה</h1>
+    <p>כל הקורס במקום אחד — הגדרות, משפטים <b>עם הוכחות מלאות</b>, דוגמאות הרצה מספריות מפורטות לכל אלגוריתם, ובסוף כל נושא — שאלות נכון/לא-נכון מאתגרות. מבוסס על הרצאות פרופ׳ גל צ׳צ׳יק, ד״ר אורי שוהם וד״ר אורן גליקמן.</p>
+    <div class="kbd-hint">
+      <span class="pill">14 נושאים</span>
+      <span class="pill">הוכחות מלאות</span>
+      <span class="pill">דוגמאות הרצה</span>
+      <span class="pill">חידון מ־1000 שאלות</span>
+    </div>
+  </section>
+
+  <section id="topics">
+    <div class="grid">
+
+      <a class="tile reveal" href="topics/math.html" style="--tile-c:rgba(110,168,255,.28)">
+        <div class="ico">🧮</div>
+        <div class="num">נושא 01</div>
+        <h3>יסודות מתמטיים</h3>
+        <p>ערכים עצמיים, שונות משותפת, גאוסיאנים רב-ממדיים, גרדיאנט, מטריצות PSD וקמירות.</p>
+        <span class="go">←</span>
+      </a>
+
+      <a class="tile reveal" href="topics/supervised.html" style="--tile-c:rgba(176,112,255,.28)">
+        <div class="ico">🎯</div>
+        <div class="num">נושא 02</div>
+        <h3>למידה מונחית ותורת ההחלטה</h3>
+        <p>Bayes Decision Theory, סיכון, Bias-Variance, Over/Under-fitting, Cross-Validation.</p>
+        <span class="go">←</span>
+      </a>
+
+      <a class="tile reveal" href="topics/estimation.html" style="--tile-c:rgba(67,224,192,.28)">
+        <div class="ico">📊</div>
+        <div class="num">נושא 03</div>
+        <h3>הערכת פרמטרים ולמידת PAC</h3>
+        <p>ML, MAP, הערכה בייסיאנית, Loss-Based View ותאוריית ה-PAC עם חסמי דגימה.</p>
+        <span class="go">←</span>
+      </a>
+
+      <a class="tile reveal" href="topics/regression.html" style="--tile-c:rgba(255,176,87,.28)">
+        <div class="ico">📈</div>
+        <div class="num">נושא 04</div>
+        <h3>רגרסיה</h3>
+        <p>רגרסיה לינארית, פולינומיאלית, Ridge, הטלה אורתוגונלית ורגרסיה לוגיסטית.</p>
+        <span class="go">←</span>
+      </a>
+
+      <a class="tile reveal" href="topics/linear-classification.html" style="--tile-c:rgba(110,168,255,.28)">
+        <div class="ico">➗</div>
+        <div class="num">נושא 05</div>
+        <h3>סיווג לינארי</h3>
+        <p>הפרספטרון, GD/SGD, Hinge Loss, Softmax ו-Cross Entropy.</p>
+        <span class="go">←</span>
+      </a>
+
+      <a class="tile reveal" href="topics/svm.html" style="--tile-c:rgba(176,112,255,.28)">
+        <div class="ico">🛡️</div>
+        <div class="num">נושא 06</div>
+        <h3>SVM ו-Kernels</h3>
+        <p>Hard/Soft SVM, Maximum Margin, KKT, טריק הקרנל, RBF ותנאי מרסר.</p>
+        <span class="go">←</span>
+      </a>
+
+      <a class="tile reveal" href="topics/trees.html" style="--tile-c:rgba(67,224,192,.28)">
+        <div class="ico">🌳</div>
+        <div class="num">נושא 07</div>
+        <h3>עצי החלטה ואנסמבל</h3>
+        <p>ID3, אנטרופיה, Information Gain, CART, Gini, Boosting ו-XGBoost.</p>
+        <span class="go">←</span>
+      </a>
+
+      <a class="tile reveal" href="topics/bayes-knn.html" style="--tile-c:rgba(255,176,87,.28)">
+        <div class="ico">🔍</div>
+        <div class="num">נושא 08</div>
+        <h3>בייס נאיבי ו-KNN</h3>
+        <p>Naïve Bayes, החלקת לפלס, KNN, מטריקות מרחק וסיבוכיות.</p>
+        <span class="go">←</span>
+      </a>
+
+      <a class="tile reveal" href="topics/deep-learning.html" style="--tile-c:rgba(110,168,255,.28)">
+        <div class="ico">🧠</div>
+        <div class="num">נושא 09</div>
+        <h3>למידה עמוקה</h3>
+        <p>MLP, פונקציות אקטיבציה, Backpropagation, CNN, Convolution ו-Pooling.</p>
+        <span class="go">←</span>
+      </a>
+
+      <a class="tile reveal" href="topics/optimization.html" style="--tile-c:rgba(176,112,255,.28)">
+        <div class="ico">⚙️</div>
+        <div class="num">נושא 10</div>
+        <h3>אופטימיזציה ורגולריזציה</h3>
+        <p>BatchNorm, ResNet, אתחול משקולות, Weight Decay, Momentum, Adam ו-AdamW.</p>
+        <span class="go">←</span>
+      </a>
+
+      <a class="tile reveal" href="topics/unsupervised.html" style="--tile-c:rgba(67,224,192,.28)">
+        <div class="ico">🪐</div>
+        <div class="num">נושא 11</div>
+        <h3>למידה לא מונחית</h3>
+        <p>Clustering, K-Means, GMM ואלגוריתם EM, PCA ו-Autoencoders.</p>
+        <span class="go">←</span>
+      </a>
+
+      <a class="tile reveal" href="topics/generative.html" style="--tile-c:rgba(255,176,87,.28)">
+        <div class="ico">✨</div>
+        <div class="num">נושא 12</div>
+        <h3>מודלים גנרטיביים ו-SSL</h3>
+        <p>Self-Supervised Learning, Transfer Learning, Autoencoders ומודלי Diffusion.</p>
+        <span class="go">←</span>
+      </a>
+
+      <a class="tile reveal" href="topics/transformers.html" style="--tile-c:rgba(110,168,255,.28)">
+        <div class="ico">🔤</div>
+        <div class="num">נושא 13</div>
+        <h3>טרנספורמרים ו-NLP</h3>
+        <p>Word2Vec, Embeddings, Self-Attention, Multi-Head, Tokenization ו-Encoder/Decoder.</p>
+        <span class="go">←</span>
+      </a>
+
+      <a class="tile reveal" href="topics/evaluation.html" style="--tile-c:rgba(176,112,255,.28)">
+        <div class="ico">⚖️</div>
+        <div class="num">נושא 14</div>
+        <h3>הערכה, מדדים והוגנות</h3>
+        <p>Confusion Matrix, Precision/Recall, F1, ROC/AUC, כיול, סיבתיות והוגנות.</p>
+        <span class="go">←</span>
+      </a>
+
+    </div>
+  </section>
+
+  <section class="reveal" style="margin-bottom:60px">
+    <div class="goals" style="text-align:center">
+      <h2 style="justify-content:center">🎲 מוכנים להיבחן?</h2>
+      <p class="muted" style="max-width:640px;margin:0 auto 18px">
+        החידון האקראי שולף בכל פעם 30 שאלות אמריקאיות מתוך מאגר של מעל 1000 שאלות מכל נושאי הקורס,
+        עם הסבר מלא אחרי כל תשובה וציון בסוף.</p>
+      <a href="quiz.html" class="btn primary" style="display:inline-block;text-decoration:none">התחל חידון אקראי ←</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">נבנה כעזר לימוד · סיכום למידת מכונה תשפ״ו · השימוש באחריות הלומד/ת בלבד.</div>
+</footer>
+
+<script src="js/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>אופטימיזציה ורגולריזציה · ML Study Hub</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links"><a href="../index.html">בית</a><a href="../quiz.html" class="cta">🎲 חידון</a></nav>
+  </div>
+</header>
+
+<main class="wrap content">
+  <div class="topic-head">
+    <div class="eyebrow">נושא 10 · הרצאה 8</div>
+    <h1>⚙️ אופטימיזציה ורגולריזציה</h1>
+    <p>הטכניקות שהופכות אימון רשתות עמוקות לאפשרי: נרמול נתונים ו-BatchNorm, ResNet לפתרון דעיכת גרדיאנטים, אתחול משקולות חכם, רגולריזציה משתמעת (Augmentation, MixUp, Weight Decay) ומשפחת האופטימייזרים.</p>
+  </div>
+
+  <div class="goals">
+    <h2>🎯 מטרות הנושא</h2>
+    <ul>
+      <li>להבין נרמול נתונים, BatchNorm ותפקיד $\gamma,\beta$.</li>
+      <li>להבין כיצד ResNet פותר את בעיית דעיכת הגרדיאנט.</li>
+      <li>להבין אתחול משקולות (שבירת סימטריה, שונות Xavier/LeCun).</li>
+      <li>להכיר Weight Decay, Data Augmentation, MixUp, ואת האופטימייזרים SGD→Adam.</li>
+    </ul>
+  </div>
+
+  <section class="block reveal">
+    <h2>1. נרמול נתונים ו-BatchNorm <span class="tag">ייצוב</span></h2>
+    <p>נתונים בסקאלות שונות גורמים לגרדיאנט לזגזג. מנרמלים ל<b>תוחלת אפס</b> ($x_i-\mathbb E[x_i]$) ו<b>שונות 1</b> (חלוקה בסטיית התקן). Whitening מבטל גם מתאם אך יקר ומגביר רעש — לרוב מסתפקים בנרמול.</p>
+    <div class="def">
+      <span class="lbl">BatchNorm</span><br>
+      לכל מאפיין $j$ ב-Batch: $\mu_j=\tfrac1N\sum_i x_{ij}$, $\sigma_j^2=\tfrac1N\sum_i(x_{ij}-\mu_j)^2$, ואז $\hat x_{ij}=\dfrac{x_{ij}-\mu_j}{\sqrt{\sigma_j^2+\varepsilon}}$. מוסיפים פרמטרים נלמדים: $y_{ij}=\gamma_j\hat x_{ij}+\beta_j$.
+    </div>
+    <div class="note">
+      <span class="lbl">מדוע $\gamma,\beta$?</span> נרמול ל-$\mathcal N(0,1)$ קשיח כופה על הפלט להיות באזור הלינארי של האקטיבציה — מאבדים מורכבות. $\gamma,\beta$ מאפשרים לרשת ללמוד כמה נרמול היא צריכה; אם $\gamma=\sigma,\beta=\mu$ משחזרים את המקור. BN <b>לא יכול להזיק</b> — רק לשפר. יתרונות: זרימת גרדיאנטים חלקה, צעדי למידה גדולים יותר, ורעש בריא (רגולריזציה).
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> $X=\begin{pmatrix}2&10\\8&20\end{pmatrix}$ ($N=2,\ D=2$), $\varepsilon=0$.</div>
+      <div class="step"><b>ממוצעים:</b> $\mu_1=\tfrac{2+8}{2}=5$, $\mu_2=\tfrac{10+20}{2}=15$.</div>
+      <div class="step"><b>שונויות:</b> $\sigma_1^2=\tfrac{(2-5)^2+(8-5)^2}{2}=9$, $\sigma_2^2=\tfrac{(10-15)^2+(20-15)^2}{2}=25$.</div>
+      <div class="step"><b>נרמול:</b> $\hat X=\begin{pmatrix}\tfrac{2-5}{3}&\tfrac{10-15}{5}\\\tfrac{8-5}{3}&\tfrac{20-15}{5}\end{pmatrix}=\begin{pmatrix}-1&-1\\1&1\end{pmatrix}$ — כל עמודה עם ממוצע 0 ושונות 1. ✓</div>
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>2. ResNet <span class="tag">גרדיאנט נעלם</span></h2>
+    <p>רשתות עמוקות מאוד קשות לאימון — הגרדיאנטים דועכים לאורך שכבות רבות. ResNet מוסיף <b>מעקף (skip connection)</b>:</p>
+    $$H(X)=F(X)+X.$$
+    <div class="thm">
+      <span class="lbl">מדוע זה עובד?</span><br>
+      (1) שחזור פונקציית הזהות בקלות: אם הרשת רוצה להעביר מידע ללא שינוי, מספיק $F(X)\to0$ ואז $H(X)=X$. (2) פתרון דעיכת הגרדיאנט:
+      $$\frac{\partial H(X)}{\partial X}=\frac{\partial F(X)}{\partial X}+1.$$
+      ה-$+1$ מבטיח שהגרדיאנט לא מתאפס גם בשכבות עמוקות.
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>3. אתחול משקולות <span class="tag">שבירת סימטריה</span></h2>
+    <ul>
+      <li>אתחול קבוע ⟵ כל הניורונים בשכבה מחשבים אותו דבר ומתעדכנים זהה. חייבים <b>אקראיות</b> לשבירת סימטריה.</li>
+      <li>אתחול גדול מדי ⟵ אקטיבציה נכנסת לאזור הרווי (Sigmoid/tanh), נגזרת אפסית.</li>
+    </ul>
+    <div class="def">
+      <span class="lbl">Xavier/LeCun</span><br>
+      רוצים ששונות האקטיבציות לא תדעך: $\mathrm{Var}(W^Tx)=n_{l-1}\mathrm{Var}(w)\mathrm{Var}(x)$. לשמירת שונות: $\mathrm{Var}(w)=\tfrac{1}{n_{l-1}}$ (קדימה), $\tfrac1{n_l}$ (אחורה). הפשרה של Xavier: $\mathrm{Var}(w)=\dfrac{2}{n_l+n_{l-1}}$, או אחיד $W\sim U(-\sqrt{\tfrac6{n_l+n_{l-1}}},\sqrt{\tfrac6{n_l+n_{l-1}}})$.
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>4. רגולריזציה ו-Weight Decay <span class="tag">הכללה</span></h2>
+    <p><b>Weight Decay (L2):</b> מוסיפים $\lambda\|w\|^2$. כלל העדכון:</p>
+    $$w_{t+1}=(1-\eta\lambda)w_t - \eta\frac{\partial L_{orig}}{\partial w}.$$
+    <p>המקדם $(1-\eta\lambda)<1$ מכווץ את המשקולות לכיוון אפס בכל צעד — מכאן השם "דעיכת משקולות". פירוק: $w_t=(1-\lambda)^{t-1}w_1$ — דעיכה אקספוננציאלית.</p>
+    <div class="note">
+      <span class="lbl">רגולריזציה משתמעת</span><br>
+      <b>Data Augmentation:</b> טרנספורמציות אקראיות (סיבוב, היפוך, שינוי תאורה) מאלצות את הרשת ללמוד מאפיינים בלתי-תלויים במיקום/צבע. <b>MixUp:</b> $\tilde x=\lambda x_i+(1-\lambda)x_j$, $\tilde y=\lambda y_i+(1-\lambda)y_j$ עם $\lambda\sim\mathrm{Beta}(\alpha,\alpha)$ — מאלץ התנהגות לינארית בין מחלקות.
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>5. אופטימייזרים <span class="tag">SGD → Adam</span></h2>
+    <table>
+      <tr><th>אופטימייזר</th><th>רעיון מרכזי</th></tr>
+      <tr><td><b>SGD</b></td><td>$\theta\leftarrow\theta-\eta\nabla L$. פשוט; קצב למידה יחיד לכל הפרמטרים.</td></tr>
+      <tr><td><b>Momentum</b></td><td>$v_t=\gamma v_{t-1}+\eta\nabla L$; צובר מהירות, מתגבר על אוכף וזיגזוגים.</td></tr>
+      <tr><td><b>AdaGrad</b></td><td>קצב למידה מותאם לכל פרמטר לפי סכום ריבועי גרדיאנטים. חיסרון: הקצב שואף לאפס.</td></tr>
+      <tr><td><b>RMSprop</b></td><td>ממוצע נע מדועך של הריבועים (מקדם $\gamma$) — פותר את הקיפאון של AdaGrad.</td></tr>
+      <tr><td><b>Adam</b></td><td>משלב Momentum + RMSprop; הנפוץ ביותר.</td></tr>
+      <tr><td><b>AdamW</b></td><td>Adam + Weight Decay נכון (מופרד מהגרדיאנט).</td></tr>
+    </table>
+    <div class="note">
+      <span class="lbl">Adam</span><br>
+      $m_t=\gamma_1 m_{t-1}+(1-\gamma_1)\nabla L$ (מומנטום), $v_t=\gamma_2 v_{t-1}+(1-\gamma_2)(\nabla L)^2$ (סקאלה), עדכון $\theta\leftarrow\theta-\eta\dfrac{m_t}{\sqrt{v_t}+\varepsilon}$.
+    </div>
+  </section>
+
+  <div id="tf" class="tf-quiz reveal"></div>
+
+  <div class="topic-nav">
+    <a class="btn" href="deep-learning.html">→ הקודם: למידה עמוקה</a>
+    <a class="btn primary" href="unsupervised.html">הבא: למידה לא מונחית ←</a>
+  </div>
+</main>
+
+<footer><div class="wrap">ML Study Hub · נושא 10 מתוך 14</div></footer>
+
+<script src="../js/site.js"></script>
+<script>
+TFQuiz.render('#tf', [
+  { q: "BatchNorm מנרמל כל מאפיין לתוחלת 0 ושונות 1, ואז מאפשר לרשת ללמוד סקאלה והזזה $\\gamma,\\beta$.", a: true, e: "אחרי הנרמול, $y=\\gamma\\hat x+\\beta$ מאפשר לרשת לבחור את הסקאלה — ולכן BN לא יכול להזיק, רק לשפר." },
+  { q: "בלי הפרמטרים $\\gamma,\\beta$, נרמול קשיח ל-$\\mathcal N(0,1)$ עלול לכפות התנהגות לינארית של האקטיבציה.", a: true, e: "ריכוז הערכים סביב אפס נופל באזור הלינארי של הסיגמואיד/tanh, ולכן מוסיפים $\\gamma,\\beta$." },
+  { q: "ב-ResNet, המעקף מוסיף את הקלט לפלט: $H(X)=F(X)+X$.", a: true, e: "זה בדיוק ה-skip connection שמאפשר אימון רשתות עמוקות מאוד." },
+  { q: "בזכות המעקף ב-ResNet, הגרדיאנט $\\partial H/\\partial X = \\partial F/\\partial X + 1$ — ה-$+1$ מונע דעיכה.", a: true, e: "האיבר $+1$ מבטיח שהגרדיאנט לא מתאפס, ולכן פותר את בעיית הגרדיאנט הנעלם." },
+  { q: "מותר לאתחל את כל המשקולות בשכבה לאותו ערך קבוע.", a: false, e: "אתחול זהה גורם לכל הניורונים לחשב את אותו הדבר ולהתעדכן זהה — סימטריה שלא נשברת. חייבים אקראיות." },
+  { q: "אתחול משקולות גדול מדי עלול להכניס את הסיגמואיד לאזור רווי עם נגזרת אפסית.", a: true, e: "ערכים גדולים ⟵ קלטים קיצוניים לאקטיבציה ⟵ אזור שטוח ⟵ גרדיאנט מתאפס." },
+  { q: "Weight Decay מכווץ את המשקולות לכיוון אפס בכל צעד עדכון.", a: true, e: "המקדם $(1-\\eta\\lambda)<1$ מכפיל את המשקולות ומכווץ אותן — דעיכה אקספוננציאלית." },
+  { q: "Data Augmentation ו-MixUp הן צורות של רגולריזציה משתמעת שמפחיתות Overfitting.", a: true, e: "שתיהן מגדילות מלאכותית את גיוון הנתונים ומכריחות הכללה טובה יותר." },
+  { q: "AdaGrad סובל מכך שקצב הלמידה שואף לאפס לאורך זמן.", a: true, e: "הצטברות סכום ריבועי הגרדיאנטים במכנה גדלה ללא הרף ⟹ קצב הלמידה מתאפס. RMSprop פותר זאת עם ממוצע נע מדועך." },
+  { q: "Momentum עוזר להתגבר על נקודות אוכף ומינימום מקומי.", a: true, e: "צבירת מהירות מהצעדים הקודמים נותנת תנופה לחצות אזורים שטוחים ובורות." },
+  { q: "Adam משלב את היתרונות של Momentum ו-RMSprop.", a: true, e: "$m_t$ (מומנטום) + $v_t$ (סקאלה מותאמת לכל פרמטר) — לכן הוא האופטימייזר הנפוץ ביותר." },
+  { q: "Whitening (הלבנת נתונים) הוא זול חישובית ולכן משתמשים בו תמיד.", a: false, e: "Whitening יקר חישובית ומגביר רעש רקע — לרוב מסתפקים בנרמול (תוחלת 0, שונות 1) בלבד." },
+  { q: "SGD משתמש בקצב למידה יחיד לכל הפרמטרים.", a: true, e: "זו מגבלה של SGD; אופטימייזרים כמו AdaGrad/Adam מתאימים קצב שונה לכל פרמטר." },
+  { q: "אתחול Xavier שומר על שונות האקטיבציות יציבה לאורך השכבות.", a: true, e: "$\\mathrm{Var}(w)=\\tfrac{2}{n_l+n_{l-1}}$ נועד לשמור על השונות בין קדימה לאחורה." },
+  { q: "בדוגמת ה-BatchNorm, אחרי הנרמול כל עמודה קיבלה ממוצע 0 ושונות 1.", a: true, e: "$\\hat X=\\begin{pmatrix}-1&-1\\\\1&1\\end{pmatrix}$ — ממוצע 0, שונות 1 בכל עמודה." }
+]);
+</script>
+</body>
+</html>

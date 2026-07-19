@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVM ו-Kernels · ML Study Hub</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links"><a href="../index.html">בית</a><a href="../quiz.html" class="cta">🎲 חידון</a></nav>
+  </div>
+</header>
+
+<main class="wrap content">
+  <div class="topic-head">
+    <div class="eyebrow">נושא 06 · הרצאות 5–6</div>
+    <h1>🛡️ SVM ו-Kernels</h1>
+    <p>מכונות וקטורים תומכים מחפשות את המפריד עם השוליים (Margin) הרחבים ביותר. נבנה את Hard/Soft SVM דרך אופטימיזציה תחת אילוצים ו-KKT, ונשתמש בטריק הקרנל כדי להפריד נתונים לא-לינאריים.</p>
+  </div>
+
+  <div class="goals">
+    <h2>🎯 מטרות הנושא</h2>
+    <ul>
+      <li>להבין מדוע מקסום השוליים משפר הכללה, ולנסח את בעיית Hard SVM.</li>
+      <li>לגזור את הלגראנז׳יאן, תנאי KKT ואת הבעיה הדואלית.</li>
+      <li>להוסיף Slack (Soft SVM) ולהבין את תפקיד $C$.</li>
+      <li>להבין את טריק הקרנל, קרנל פולינומי, RBF ותנאי מרסר.</li>
+    </ul>
+  </div>
+
+  <section class="block reveal">
+    <h2>1. Maximum Margin ו-Hard SVM <span class="tag">גאומטריה</span></h2>
+    <p>המרחק מנקודה למישור $w^Tx-b=0$ הוא $\dfrac{|w^Tx-b|}{\|w\|}$. בעזרת Scaling Trick מנרמלים כך שבנקודות הקרובות $|w^Tx-b|=1$, ואז השוליים הם $\gamma=\dfrac{1}{\|w\|}$.</p>
+    <div class="note">
+      <span class="lbl">מדוע למקסם שוליים?</span><br>
+      חסינות לרעש (נקודה חדשה שזזה מעט לא חוצה את הקו), הכללה טובה יותר (פחות קווים אפשריים ⟵ פחות Overfitting), וודאות גבוהה יותר. הקו חייב לעבור באמצע השוליים כדי למקסם את המרחק המינימלי משני הצדדים.
+    </div>
+    <div class="thm">
+      <span class="lbl">בעיית Hard SVM</span><br>
+      $$\min_{w,b}\tfrac12\|w\|^2 \quad\text{s.t.}\quad y_i(w^Tx_i-b)\ge1\ \forall i.$$
+      פונקציה קמורה עם מינימום גלובלי יחיד. מזעור $\|w\|$ שקול למקסום השוליים.
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>2. לגראנז׳יאן, KKT והבעיה הדואלית <span class="tag">אופטימיזציה</span></h2>
+    <div class="def">
+      <span class="lbl">הלגראנז׳יאן</span><br>
+      $$L(w,b,\alpha)=\tfrac12\|w\|^2 + \sum_{i=1}^n \alpha_i\big(1-y_i(w^Tx_i-b)\big),\qquad \max_{\alpha\ge0}\min_{w,b}L.$$
+    </div>
+    <div class="thm">
+      <span class="lbl">תנאי KKT</span><br>
+      באופטימום, לכל נקודה $\alpha_i\,g_i=0$: או ש-$\alpha_i=0$ (נקודה רחוקה מהשוליים — לא משפיעה), או ש-$g_i=0$ (הנקודה על השוליים — <b>וקטור תומך</b>). לכן רק הוקטורים התומכים קובעים את הקו.
+    </div>
+    <div class="proof">
+      <span class="lbl">גזירת הדואל</span><br>
+      $\nabla_w L = w - \sum_i \alpha_i y_i x_i = 0 \Rightarrow w^\star=\sum_i \alpha_i y_i x_i$ (צירוף לינארי של הנקודות).<br>
+      $\nabla_b L = \sum_i \alpha_i y_i = 0$ (אילוץ).<br>
+      הצבה נותנת את הבעיה הדואלית:
+      $$\max_\alpha\ W(\alpha)=\sum_i\alpha_i - \tfrac12\sum_{i,j}\alpha_i\alpha_j y_iy_j\,(x_i^Tx_j)\quad\text{s.t.}\ \sum_i\alpha_iy_i=0,\ \alpha_i\ge0.$$
+    </div>
+    <div class="note">
+      <span class="lbl">מדוע הדואל חשוב?</span><br>
+      זמן הריצה תלוי במספר הנקודות $n$ ולא במימד $d$ ⟵ מצוין כאשר יש הרבה תכונות. הנתונים מופיעים <b>רק</b> דרך המכפלה הסקלרית $x_i^Tx_j$ — וזו הדלת לטריק הקרנל. בזכות KKT, רוב ה-$\alpha_i$ אפס ⟵ המודל חסכוני בזיכרון.
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> שני וקטורים תומכים בממד 1: חיובי ב-$x=+1$, שלילי ב-$x=-1$. מפריד באמצע ($b=0$).</div>
+      <div class="step"><b>נרמול:</b> דורשים $w\cdot1 = +1$ ⟹ $w=1$. השוליים $\gamma=1/\|w\|=1$; רוחב הרחוב $=2\gamma=2$.</div>
+      <div class="step"><b>אימות:</b> נקודה חיובית $y(wx)=1\cdot(1\cdot1)=1\ge1$ ✓; שלילית $-1\cdot(1\cdot(-1))=1\ge1$ ✓.</div>
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>3. Soft SVM <span class="tag">רעש</span></h2>
+    <p>כשיש חריגות בודדות, מוסיפים משתני Slack $\xi_i\ge0$: $y_i(w^Tx_i-b)\ge1-\xi_i$. פונקציית המטרה:</p>
+    $$\min_{w,b,\xi}\ \tfrac12\|w\|^2 + C\sum_{i=1}^n \xi_i,\qquad \xi_i=\max(0,\,1-y_i(w^Tx_i-b)).$$
+    <div class="note">
+      <span class="lbl">תפקיד $C$</span><br>
+      <b>$C$ גדול:</b> קנס עצום על כל חריגה ⟵ שוליים צרים, דומה ל-Hard SVM (סכנת Overfitting). <b>$C$ קטן:</b> סבלני יותר לטעויות, שוליים רחבים יותר (סכנת Underfitting). זהו איזון בין <b>Empirical Risk</b> (מימין) ל<b>רגולריזציה</b> (משמאל, $\tfrac12\|w\|^2$).
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>4. טריק הקרנל <span class="tag">קסם</span></h2>
+    <div class="def">
+      <span class="lbl">פונקציית קרנל</span><br>
+      $K(x,z)=\phi(x)^T\phi(z)$ — מחשבת מכפלה סקלרית במרחב התכונות הגבוה <b>ישירות</b>, בלי לחשב את $\phi$ בפועל. כיוון שבדואל הנתונים מופיעים רק כמכפלה, מחליפים $x_i^Tx_j \to K(x_i,x_j)$ וחוסכים את קללת המימד.
+    </div>
+    <div class="thm">
+      <span class="lbl">דוגמה — קרנל פולינומי מדרגה 2</span><br>
+      עבור $\phi(x_1,x_2)=(x_1^2,\sqrt2 x_1x_2,x_2^2)$ מתקיים $\phi(x)^T\phi(z)=(x^Tz)^2$.
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה</span><br>
+      $\phi(x)^T\phi(z)=x_1^2z_1^2 + 2x_1x_2z_1z_2 + x_2^2z_2^2 = (x_1z_1+x_2z_2)^2=(x^Tz)^2$. באופן כללי $K(x,z)=(x^Tz+1)^p$ הוא קרנל חוקי.
+    </div>
+    <div class="note">
+      <span class="lbl">RBF (הקרנל הרדיאלי)</span><br>
+      $K(x,z)=\exp\!\big(-\tfrac{\|x-z\|^2}{2\sigma^2}\big)$. מודד קרבה: $x\approx z \Rightarrow K\approx1$; רחוקים $\Rightarrow K\approx0$. באמצעות טור טיילור, ה-RBF שקול למיפוי למימד <b>אינסופי</b>.
+    </div>
+    <div class="thm">
+      <span class="lbl">תנאי מרסר</span><br>
+      $K$ הוא קרנל חוקי $\iff$ מטריצת גראם $G_{ij}=K(x_i,x_j)$ היא PSD. אז בעיית ה-SVM הדואלית קמורה — פתרון אופטימלי יחיד.
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> $x=(1,2),\ z=(3,1)$, קרנל פולינומי $K(x,z)=(x^Tz)^2$.</div>
+      <div class="step"><b>דרך המכפלה הישירה ($O(d)$):</b> $x^Tz=1\cdot3+2\cdot1=5$, לכן $K=25$.</div>
+      <div class="step"><b>אימות דרך $\phi$ (ממד 3):</b> $\phi(x)=(1,2\sqrt2,4)$, $\phi(z)=(9,3\sqrt2,1)$. מכפלה: $9+ (2\sqrt2)(3\sqrt2)+4 = 9+12+4=25$ ✓ — אותה תוצאה, בלי לחשב $\phi$!</div>
+      <div class="step"><b>RBF:</b> $\|x-z\|^2=(1-3)^2+(2-1)^2=5$. עם $\sigma=1$: $K=e^{-5/2}=e^{-2.5}\approx0.082$ — הנקודות רחוקות יחסית.</div>
+    </div>
+  </section>
+
+  <div id="tf" class="tf-quiz reveal"></div>
+
+  <div class="topic-nav">
+    <a class="btn" href="linear-classification.html">→ הקודם: סיווג לינארי</a>
+    <a class="btn primary" href="trees.html">הבא: עצי החלטה ואנסמבל ←</a>
+  </div>
+</main>
+
+<footer><div class="wrap">ML Study Hub · נושא 6 מתוך 14</div></footer>
+
+<script src="../js/site.js"></script>
+<script>
+TFQuiz.render('#tf', [
+  { q: "SVM מחפש כל מפריד לינארי חוקי, בלי קשר לרוחב השוליים.", a: false, e: "בניגוד לפרספטרון, SVM מחפש את המפריד עם השוליים ה<b>רחבים ביותר</b> — זה מה שמשפר הכללה." },
+  { q: "השוליים ב-SVM שווים ל-$1/\\|w\\|$, ולכן מקסום השוליים שקול למזעור $\\|w\\|$.", a: true, e: "אחרי ה-Scaling Trick, $\\gamma=1/\\|w\\|$; מזעור $\\tfrac12\\|w\\|^2$ ממקסם את השוליים." },
+  { q: "לפי KKT, רק הוקטורים התומכים (נקודות על השוליים) קובעים את קו ההפרדה.", a: true, e: "עבור נקודות רחוקות $\\alpha_i=0$; רק לוקטורים תומכים $\\alpha_i>0$ והם קובעים את $w$." },
+  { q: "בבעיה הדואלית של SVM, הנתונים מופיעים רק דרך המכפלה הסקלרית $x_i^Tx_j$.", a: true, e: "זו בדיוק הסיבה שאפשר להחליף אותה בקרנל $K(x_i,x_j)$ — טריק הקרנל." },
+  { q: "זמן הריצה של SVM הדואלי תלוי בעיקר במימד התכונות $d$.", a: false, e: "הוא תלוי במספר הנקודות $n$, לא ב-$d$ — ולכן SVM מצוין כשיש הרבה תכונות." },
+  { q: "ב-Soft SVM, $C$ גדול מאוד מוביל לשוליים רחבים וסבלנות גבוהה לטעויות.", a: false, e: "הפוך: $C$ גדול = קנס עצום על טעויות = שוליים צרים (דומה ל-Hard SVM). $C$ קטן = שוליים רחבים, סבלני לטעויות." },
+  { q: "משתני ה-Slack $\\xi_i$ מאפשרים לנקודות לחרוג מהאילוץ הקשיח של המרחק מהקו.", a: true, e: "$\\xi_i$ 'מרפה' את האילוץ $y_i(w^Tx_i-b)\\ge1-\\xi_i$, ומאפשר טיפול ברעש." },
+  { q: "קרנל מאפשר לחשב מכפלה סקלרית במרחב גבוה בעלות של המרחב הנמוך, בלי לחשב $\\phi$ במפורש.", a: true, e: "$K(x,z)=\\phi(x)^T\\phi(z)$ מחושב ישירות ($O(d)$), חוסך את קללת המימד." },
+  { q: "עבור הקרנל הפולינומי $K(x,z)=(x^Tz)^2$, המיפוי $\\phi$ הוא לממד גבוה יותר מהמקורי.", a: true, e: "$\\phi(x_1,x_2)=(x_1^2,\\sqrt2 x_1x_2,x_2^2)$ ⟵ ממד 2 הופך לממד 3." },
+  { q: "קרנל RBF שקול למיפוי לממד סופי בלבד.", a: false, e: "פיתוח טור טיילור של האקספוננט מראה ש-RBF שקול למיפוי לממד <b>אינסופי</b>." },
+  { q: "$K(x,z)$ הוא קרנל חוקי אם ורק אם מטריצת גראם המתאימה היא PSD (תנאי מרסר).", a: true, e: "זהו תנאי מרסר; PSD מבטיח קיום מיפוי $\\phi$ ואת קמירות הבעיה הדואלית." },
+  { q: "כאשר משתמשים ב-RBF, ערך הקרנל גדל ככל שהנקודות רחוקות יותר זו מזו.", a: false, e: "הפוך: $x\\approx z\\Rightarrow K\\approx1$; רחוקים $\\Rightarrow$ האקספוננט שואף ל-$-\\infty$ ו-$K\\approx0$." },
+  { q: "בעיית ה-Hard SVM היא בעיית אופטימיזציה קמורה עם מינימום גלובלי יחיד.", a: true, e: "מזעור $\\tfrac12\\|w\\|^2$ תחת אילוצים לינאריים — קמור, ולכן מינימום יחיד." },
+  { q: "אם מזיזים וקטור תומך, קו ההפרדה של ה-SVM עשוי להשתנות.", a: true, e: "הוקטורים התומכים הם שקובעים את הקו; הזזתם משנה אותו. הזזת נקודה רחוקה — לא משנה דבר." },
+  { q: "מכיוון שרוב ה-$\\alpha_i$ מתאפסים, מודל SVM המאומן חסכוני בזיכרון.", a: true, e: "רק הוקטורים התומכים (מיעוט הנקודות) נשמרים — אפשר לזרוק את השאר." }
+]);
+</script>
+</body>
+</html>

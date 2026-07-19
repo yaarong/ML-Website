@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>הערכת פרמטרים ולמידת PAC · ML Study Hub</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links"><a href="../index.html">בית</a><a href="../quiz.html" class="cta">🎲 חידון</a></nav>
+  </div>
+</header>
+
+<main class="wrap content">
+  <div class="topic-head">
+    <div class="eyebrow">נושא 03 · הרצאה 3</div>
+    <h1>📊 הערכת פרמטרים ולמידת PAC</h1>
+    <p>כשלא ידועות ההתפלגויות, מעריכים פרמטרים מהנתונים: ML, MAP והערכה בייסיאנית מלאה. לאחר מכן — תורת ה-PAC שעונה על השאלה: כמה דגימות צריך מודל כדי להיות טוב?</p>
+  </div>
+
+  <div class="goals">
+    <h2>🎯 מטרות הנושא</h2>
+    <ul>
+      <li>להבין ולחשב אומדי ML, MAP והתפלגות פוסטריורית מלאה.</li>
+      <li>לקשר בין פונקציית ההפסד לאומד: ריבועי⟵ממוצע, מוחלט⟵חציון, 0-1⟵שכיח (MAP).</li>
+      <li>להגדיר PAC-Learnability, ERM, Version Space ו-Bad Hypotheses.</li>
+      <li>להוכיח את חסם הדגימה למחלקת היפותזות סופית.</li>
+    </ul>
+  </div>
+
+  <section class="block reveal">
+    <h2>1. Maximum Likelihood (ML) <span class="tag">אומד נקודתי</span></h2>
+    <p>הפרמטר $\theta$ קבוע אך לא ידוע. נבחר את $\theta$ שנותן את הסיכוי הגבוה ביותר לדטה שראינו (i.i.d):</p>
+    $$\hat\theta_{ML}=\arg\max_\theta P(S_n|\theta)=\arg\max_\theta \sum_{i=1}^n \log P(x_i|\theta).$$
+    <div class="run">
+      <div class="step"><b>מודל בינומי:</b> $P(X=k|p)=\binom{n}{k}p^k(1-p)^{n-k}$. נאמוד את $p$.</div>
+      <div class="step"><b>Log-likelihood:</b> $\ell(p)=\log\binom nk + k\log p + (n-k)\log(1-p)$.</div>
+      <div class="step"><b>גזירה והשוואה לאפס:</b> $\dfrac{k}{p}-\dfrac{n-k}{1-p}=0 \Rightarrow k(1-p)=(n-k)p \Rightarrow k=np \Rightarrow \hat p_{ML}=\dfrac{k}{n}$.</div>
+      <div class="step"><b>מספרי:</b> אם $n=10,\ k=7$ ⟹ $\hat p_{ML}=0.7$ — פשוט השכיחות היחסית.</div>
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>2. Maximum A Posteriori (MAP) <span class="tag">עם Prior</span></h2>
+    <p>עכשיו $\theta$ הוא משתנה אקראי עם ידע מוקדם $P(\theta)$. ה-MAP הוא השיא של ה-Posterior:</p>
+    $$\hat\theta_{MAP}=\arg\max_\theta P(\theta|D) \propto \arg\max_\theta P(D|\theta)\,P(\theta).$$
+    <div class="note"><span class="lbl">קשר ל-ML</span> אם ה-Prior אחיד ($P(\theta)=$ const) אזי $\hat\theta_{MAP}=\hat\theta_{ML}$.</div>
+    <div class="run">
+      <div class="step"><b>הטלת מטבע:</b> Likelihood $=\theta^k(1-\theta)^{n-k}$, Prior בטא $\propto \theta^{\alpha-1}(1-\theta)^{\beta-1}$.</div>
+      <div class="step"><b>Posterior:</b> $\propto \theta^{k+\alpha-1}(1-\theta)^{n-k+\beta-1}$.</div>
+      <div class="step"><b>גזירת log והשוואה:</b> $\dfrac{k+\alpha-1}{\theta}=\dfrac{n-k+\beta-1}{1-\theta} \Rightarrow \hat\theta_{MAP}=\dfrac{\alpha+k-1}{n+\alpha+\beta-2}$.</div>
+      <div class="step"><b>מספרי:</b> $n=10,k=7,\ \alpha=\beta=2$ ⟹ $\hat\theta_{MAP}=\dfrac{2+7-1}{10+2+2-2}=\dfrac{8}{12}\approx0.667$ — מוטה מעט לכיוון $0.5$ בהשוואה ל-$\hat\theta_{ML}=0.7$, בזכות ה-Prior.</div>
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>3. הערכה בייסיאנית ו-Loss-Based View <span class="tag">התפלגות מלאה</span></h2>
+    <p>בהערכה בייסיאנית לא בוחרים ערך יחיד אלא מחזיקים את כל ה-Posterior $P(\theta|D)$ ומעדכנים אותו עם הנתונים.</p>
+    <div class="thm">
+      <span class="lbl">Loss-Based View — איזה אומד לבחור?</span><br>
+      $\hat\theta=\arg\min_\theta \mathbb{E}_{\theta|D}[\lambda(\hat\theta,\theta)]$. סוג ההפסד קובע את האומד:
+      <ul>
+        <li><b>הפסד ריבועי</b> $\Rightarrow$ אומד = <b>ממוצע</b> ה-Posterior.</li>
+        <li><b>הפסד מוחלט</b> $\Rightarrow$ אומד = <b>חציון</b>.</li>
+        <li><b>הפסד 0-1</b> $\Rightarrow$ אומד = <b>שכיח</b> = MAP.</li>
+      </ul>
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה (ריבועי ⟹ ממוצע)</span><br>
+      $\frac{d}{d\hat\theta}\int(\hat\theta-\theta)^2 P(\theta|D)d\theta = \int 2(\hat\theta-\theta)P(\theta|D)d\theta = 0 \Rightarrow \hat\theta\int P(\theta|D)d\theta = \int\theta P(\theta|D)d\theta$. כיוון שהאינטגרל של ה-Posterior הוא 1, מקבלים $\hat\theta=\mathbb{E}_{\theta|D}[\theta]$.
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>4. PAC Learning <span class="tag">תאוריה</span></h2>
+    <div class="def">
+      <span class="lbl">Realizability</span><br>
+      קיימת $h^\star\in\mathcal H$ המתייגת נכון את כל הנתונים, כלומר $\mathrm{Err}_{\mathcal D}(h^\star)=0$. אז $\min_{h}\mathrm{Err}_{S}(h)=0$.
+    </div>
+    <div class="def">
+      <span class="lbl">ERM ו-Version Space</span><br>
+      $\mathrm{ERM}(S)=\arg\min_{h\in\mathcal H}\mathrm{Err}_S(h)$. מרחב הגרסאות: $VS=\{h\in\mathcal H:\mathrm{Err}_S(h)=0\}$. היפותזה $h$ היא "רעה" אם $\mathrm{Err}_{\mathcal D}(h)>\varepsilon$.
+    </div>
+    <div class="def">
+      <span class="lbl">PAC-Learnable</span><br>
+      $\mathcal H$ היא PAC-Learnable אם לכל $\varepsilon,\delta>0$ קיים $N_{\varepsilon,\delta}$ (פולינומי ב-$1/\varepsilon,1/\delta$) כך שלכל התפלגות ולכל $n>N$: $P(\mathrm{Err}_{\mathcal D}(A(S_n))<\varepsilon)>1-\delta$.
+    </div>
+
+    <div class="thm">
+      <span class="lbl">משפט — חסם הדגימה למחלקה סופית</span><br>
+      תחת Realizability, אם $n > \tfrac1\varepsilon\ln\tfrac{|\mathcal H|}{\delta}$ אזי $P(\mathrm{Err}_{\mathcal D}(\mathrm{ERM}(S_n))<\varepsilon)>1-\delta$.
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה</span><br>
+      נסמן $\mathcal H_{bad}=\{h:\mathrm{Err}_{\mathcal D}(h)>\varepsilon\}$. ההסתברות שהיפותזה רעה בודדת תשרוד (0 טעויות על $n$ דגימות i.i.d):
+      $$P(\mathrm{Err}_{S}(h)=0)=\prod_{i=1}^n P(h(x_i)=y_i)\le (1-\varepsilon)^n \le e^{-n\varepsilon}.$$
+      לפי חסם האיחוד על כל ההיפותזות הרעות:
+      $$P(\exists h\in\mathcal H_{bad}: \mathrm{Err}_S(h)=0)\le |\mathcal H_{bad}|\,e^{-n\varepsilon} \le |\mathcal H|\,e^{-n\varepsilon}.$$
+      דורשים שזה $\le\delta$: $|\mathcal H|e^{-n\varepsilon}\le\delta \Rightarrow n>\tfrac1\varepsilon\ln\tfrac{|\mathcal H|}{\delta}$.
+    </div>
+
+    <div class="note">
+      <span class="lbl">אי-שוויון הופדינג (Agnostic)</span><br>
+      עבור הפסדים $Z_i\in[0,1]$ ו-$\bar Z=\tfrac1n\sum Z_i$: $\;P(|\bar Z-\mathbb E[\bar Z]|>\varepsilon)\le 2e^{-2n\varepsilon^2}$. מכאן החסם ה-Agnostic $\mathrm{Err}_{\mathcal D}(\mathrm{ERM})\le \min_h\mathrm{Err}_S(h)+\sqrt{\tfrac{\ln(2|\mathcal H|/\delta)}{2n}}$.
+    </div>
+
+    <div class="run">
+      <div class="step"><b>נתון:</b> $|\mathcal H|=1000$, רוצים $\varepsilon=0.1$, $\delta=0.05$. כמה דגימות?</div>
+      <div class="step"><b>חישוב:</b> $n > \tfrac{1}{0.1}\ln\tfrac{1000}{0.05} = 10\cdot\ln(20000) \approx 10\cdot 9.9 \approx 99$.</div>
+      <div class="step"><b>מסקנה:</b> עם כ-100 דגימות, בהסתברות $\ge95\%$ ה-ERM יחזיר היפותזה עם שגיאה אמיתית $<10\%$. שימו לב: החסם <b>לוגריתמי</b> ב-$|\mathcal H|$ — הכפלת מרחב ההיפותזות מוסיפה מעט מאוד דגימות.</div>
+    </div>
+  </section>
+
+  <div id="tf" class="tf-quiz reveal"></div>
+
+  <div class="topic-nav">
+    <a class="btn" href="supervised.html">→ הקודם: למידה מונחית</a>
+    <a class="btn primary" href="regression.html">הבא: רגרסיה ←</a>
+  </div>
+</main>
+
+<footer><div class="wrap">ML Study Hub · נושא 3 מתוך 14</div></footer>
+
+<script src="../js/site.js"></script>
+<script>
+TFQuiz.render('#tf', [
+  { q: "אומד ה-ML בוחר את הפרמטר שמקסם את ההסתברות לראות את הנתונים שנצפו בפועל.", a: true, e: "$\\hat\\theta_{ML}=\\arg\\max_\\theta P(S_n|\\theta)$ — בדיוק זה." },
+  { q: "עבור מודל בינומי, אומד ה-ML של $p$ הוא השכיחות היחסית $k/n$.", a: true, e: "גזירת ה-Log-likelihood נותנת $\\hat p_{ML}=k/n$." },
+  { q: "כאשר ה-Prior אחיד, אומד ה-MAP שווה לאומד ה-ML.", a: true, e: "אם $P(\\theta)$ קבוע, מקסום $P(D|\\theta)P(\\theta)$ שקול למקסום $P(D|\\theta)$ בלבד — כלומר ML." },
+  { q: "ה-MAP רגיש לרעש יותר מ-ML כי הוא מוסיף מידע מוקדם.", a: false, e: "להיפך — ה-Prior מייצב את ההערכה ומקטין רגישות לרעש, במיוחד כשיש מעט נתונים." },
+  { q: "בהערכה בייסיאנית מלאה מקבלים ערך יחיד לפרמטר.", a: false, e: "מקבלים התפלגות פוסטריורית מלאה $P(\\theta|D)$, לא ערך נקודתי." },
+  { q: "כאשר פונקציית ההפסד ריבועית, האומד האופטימלי הוא ממוצע ה-Posterior.", a: true, e: "גזירת התוחלת של $(\\hat\\theta-\\theta)^2$ נותנת $\\hat\\theta=\\mathbb{E}[\\theta|D]$ — הממוצע." },
+  { q: "כאשר פונקציית ההפסד היא 0-1, האומד האופטימלי הוא החציון של ה-Posterior.", a: false, e: "הפסד 0-1 נותן את ה<b>שכיח</b> (MODE) = MAP, לא החציון. החציון מתקבל מהפסד מוחלט." },
+  { q: "תחת הנחת Realizability, קיים $h^\\star$ עם שגיאה אמיתית אפס.", a: true, e: "זו בדיוק הגדרת Realizability — יש היפותזה מושלמת במרחב." },
+  { q: "החסם על מספר הדגימות ב-PAC הוא פולינומי (לינארי) ב-$|\\mathcal H|$.", a: false, e: "החסם הוא $\\tfrac1\\varepsilon\\ln\\tfrac{|\\mathcal H|}{\\delta}$ — <b>לוגריתמי</b> ב-$|\\mathcal H|$, לא פולינומי בו. (הוא כן פולינומי ב-$1/\\varepsilon,1/\\delta$.)" },
+  { q: "ההסתברות שהיפותזה רעה (שגיאה $>\\varepsilon$) תשרוד בלי טעויות על $n$ דגימות חסומה ב-$e^{-n\\varepsilon}$.", a: true, e: "$P\\le(1-\\varepsilon)^n\\le e^{-n\\varepsilon}$; זהו לב ההוכחה של חסם הדגימה." },
+  { q: "הוכחת חסם הדגימה משתמשת בחסם האיחוד על פני כל ההיפותזות הרעות.", a: true, e: "מסכמים את ההסתברויות של כל $h\\in\\mathcal H_{bad}$ ומקבלים $|\\mathcal H|e^{-n\\varepsilon}$." },
+  { q: "ככל שדורשים $\\varepsilon$ קטן יותר (דיוק גבוה יותר), נדרשות פחות דגימות.", a: false, e: "$n\\propto 1/\\varepsilon$ — $\\varepsilon$ קטן יותר דורש <b>יותר</b> דגימות." },
+  { q: "ERM בוחר את ההיפותזה שממזערת את השגיאה על נתוני האימון.", a: true, e: "$\\mathrm{ERM}(S)=\\arg\\min_h \\mathrm{Err}_S(h)$ — מזעור הסיכון האמפירי." },
+  { q: "אי-שוויון הופדינג נותן חסם שדועך אקספוננציאלית ב-$n\\varepsilon^2$.", a: true, e: "$P(|\\bar Z-\\mathbb E\\bar Z|>\\varepsilon)\\le 2e^{-2n\\varepsilon^2}$ — דעיכה אקספוננציאלית ב-$n\\varepsilon^2$." },
+  { q: "במצב Agnostic (לא Realizable) עדיין מניחים שקיימת היפותזה עם שגיאה אפס.", a: false, e: "Agnostic דווקא מוותר על ההנחה הזו — ייתכן שכל ההיפותזות טועות, והמטרה היא להתקרב לביצועי ההיפותזה הטובה ביותר במרחב." }
+]);
+</script>
+</body>
+</html>

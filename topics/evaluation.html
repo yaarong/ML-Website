@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>הערכה, מדדים והוגנות · ML Study Hub</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links"><a href="../index.html">בית</a><a href="../quiz.html" class="cta">🎲 חידון</a></nav>
+  </div>
+</header>
+
+<main class="wrap content">
+  <div class="topic-head">
+    <div class="eyebrow">נושא 14 · הרצאות 5, 12</div>
+    <h1>⚖️ הערכה, מדדים והוגנות</h1>
+    <p>איך מודדים כמה מודל טוב מעבר לדיוק? Confusion Matrix, Precision/Recall/F1, ROC/AUC, כיול (Calibration), ולבסוף — סיבתיות והוגנות אלגוריתמית.</p>
+  </div>
+
+  <div class="goals">
+    <h2>🎯 מטרות הנושא</h2>
+    <ul>
+      <li>להבין מטריצת הבלבול ומדוע Accuracy מטעה בנתונים לא-מאוזנים.</li>
+      <li>לחשב Precision, Recall ו-F1 ולהבין את ROC/AUC.</li>
+      <li>להכיר שיטות כיול (Calibration) של הסתברויות.</li>
+      <li>להבחין בין מתאם לסיבתיות ולהכיר קריטריוני הוגנות.</li>
+    </ul>
+  </div>
+
+  <section class="block reveal">
+    <h2>1. Confusion Matrix ומדדים <span class="tag">סיווג בינארי</span></h2>
+    <table>
+      <tr><th></th><th>חזוי חיובי</th><th>חזוי שלילי</th></tr>
+      <tr><th>אמת חיובי</th><td>TP (מעולה)</td><td>FN (הטעות הכי גרועה!)</td></tr>
+      <tr><th>אמת שלילי</th><td>FP (אזעקת שווא)</td><td>TN (מעולה)</td></tr>
+    </table>
+    <div class="warn">
+      <span class="lbl">מדוע Accuracy מטעה?</span> מודל שמחזיר "בריא" לכל 100 מטופלים (מתוכם 9 חולים) יקבל 91% דיוק — אך יפספס את <b>כל</b> החולים! בנתונים לא-מאוזנים דיוק חסר-תועלת.
+    </div>
+    <div class="def">
+      <span class="lbl">Precision, Recall, F1</span><br>
+      $\mathrm{Precision}=\dfrac{TP}{TP+FP}$ (מתוך מה שסימנתי חיובי — כמה צדקתי). $\mathrm{Recall}=\dfrac{TP}{TP+FN}$ (מתוך החולים האמיתיים — כמה תפסתי).
+      $$F_1=\frac{2}{\frac1{\mathrm{Recall}}+\frac1{\mathrm{Precision}}}=2\cdot\frac{P\cdot R}{P+R}.$$
+      ה-F1 הוא ממוצע הרמוני — מעניש ערכים קיצוניים; אם אחד המדדים שואף לאפס, גם F1 שואף לאפס.
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> $TP=40,\ FP=10,\ FN=20,\ TN=30$.</div>
+      <div class="step"><b>Precision:</b> $\tfrac{40}{40+10}=\tfrac{40}{50}=0.80$.</div>
+      <div class="step"><b>Recall:</b> $\tfrac{40}{40+20}=\tfrac{40}{60}=0.667$.</div>
+      <div class="step"><b>F1:</b> $2\cdot\tfrac{0.80\cdot0.667}{0.80+0.667}=2\cdot\tfrac{0.533}{1.467}=0.727$.</div>
+      <div class="step"><b>Accuracy:</b> $\tfrac{40+30}{100}=0.70$ — קרוב, אך F1 מדגיש את חוסר האיזון בין P ל-R.</div>
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>2. ROC ו-AUC <span class="tag">ספים</span></h2>
+    <p>המודל נותן הסתברות; אנחנו בוחרים את הסף. עקומת ROC מציגה ביצועים על פני כל הספים ומשלבת:</p>
+    <ul>
+      <li><b>TPR</b> (ציר $y$) = Recall = $\tfrac{TP}{TP+FN}$ — כמה מהחיוביים תפסנו.</li>
+      <li><b>FPR</b> (ציר $x$) = $\tfrac{FP}{FP+TN}$ — כמה מהשליליים "לכלכנו".</li>
+    </ul>
+    <div class="def">
+      <span class="lbl">AUC</span><br>
+      השטח מתחת לעקומה, $\in[0,1]$. $AUC=1$ ⟵ מודל מושלם; $AUC=0.5$ ⟵ ניחוש אקראי. ככל שגבוה יותר, המודל מבחין טוב יותר בין המחלקות. בבית חולים נעדיף Recall גבוה (נקודה גבוהה בציר $y$) גם במחיר יותר אזעקות שווא.
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>3. כיול (Calibration) <span class="tag">אמינות ההסתברות</span></h2>
+    <p>מודלים עם Cross-Entropy נוטים להיות "בטוחים מדי" — הסתברות 0.9 לא בהכרח מייצגת דיוק 90%. שיטות כיול:</p>
+    <ul>
+      <li><b>Histogram Binning:</b> מחלקים ל"סלים" ומשייכים ציון מכויל לפי דיוק ממוצע.</li>
+      <li><b>Isotonic Regression:</b> לומדת פונקציה רציפה, עולה ומונוטונית.</li>
+      <li><b>Platt Scaling:</b> $\mathrm{acc}=\sigma(a\cdot y+b)$ — לומדים 2 פרמטרים.</li>
+      <li><b>Temperature Scaling:</b> פרמטר יחיד $T$ שמרכך את ה-Softmax — היעיל ביותר.</li>
+    </ul>
+  </section>
+
+  <section class="block reveal">
+    <h2>4. סיבתיות והוגנות <span class="tag">אתיקה</span></h2>
+    <div class="note">
+      <span class="lbl">מתאם ≠ סיבתיות</span><br>
+      הופעה משותפת של $A,B$ לא מעידה שאחד גורם לשני — למשל שלוליות וגשם מופיעים יחד, אך שלוליות לא גורמות לגשם. לבדיקת סיבתיות מבצעים <b>התערבות</b> $P(\text{Rain}|do(\text{Puddle}))$. מודלים משתמשים לעיתים בתכונות מנבאות שאינן סיבתיות — מקור להטיה.
+    </div>
+    <div class="def">
+      <span class="lbl">קריטריוני הוגנות קבוצתית</span><br>
+      <b>שוויון דמוגרפי:</b> שיעור התחזיות החיוביות שווה בכל הקבוצות. <b>סיכויים שווים (Equalized Odds):</b> TPR ו-FPR זהים בכל הקבוצות. <b>כיול:</b> עבור כל מי שקיבל ציון $p$, החלק החיובי בפועל שווה ל-$p$, בלי קשר לקבוצה.
+    </div>
+    <div class="warn">
+      <span class="lbl">מקור להטיה</span> קבוצות מיעוט מיוצגות פחות בנתונים ⟹ המודל מגיע לדיוק נמוך יותר עבורן ⟹ שגיאות גבוהות יותר על המיעוט — אי-הוגנות שנובעת מחוסר איזון בדטה.
+    </div>
+  </section>
+
+  <div id="tf" class="tf-quiz reveal"></div>
+
+  <div class="topic-nav">
+    <a class="btn" href="transformers.html">→ הקודם: טרנספורמרים</a>
+    <a class="btn primary" href="../quiz.html">🎲 עכשיו — חידון אקראי!</a>
+  </div>
+</main>
+
+<footer><div class="wrap">ML Study Hub · נושא 14 מתוך 14 · סיימת את כל החומר! 🎉</div></footer>
+
+<script src="../js/site.js"></script>
+<script>
+TFQuiz.render('#tf', [
+  { q: "FN (False Negative) נחשבת לעיתים לטעות החמורה ביותר — למשל לומר לחולה שהוא בריא.", a: true, e: "המודל חזה שלילי (בריא) אך המטופל חולה — הטעות המסוכנת ביותר ברפואה." },
+  { q: "בנתונים לא-מאוזנים, Accuracy גבוה מעיד תמיד על מודל טוב.", a: false, e: "מודל שמחזיר 'בריא' לכולם יכול לקבל 91% דיוק ולפספס את כל החולים — Accuracy מטעה בחוסר איזון." },
+  { q: "Precision = $TP/(TP+FP)$ — מתוך מה שסומן חיובי, כמה באמת חיובי.", a: true, e: "זו בדיוק הגדרת ה-Precision." },
+  { q: "Recall = $TP/(TP+FN)$ — מתוך החיוביים האמיתיים, כמה תפסנו.", a: true, e: "Recall מודד את היכולת לתפוס את כל המקרים החיוביים." },
+  { q: "F1 הוא הממוצע האריתמטי של Precision ו-Recall.", a: false, e: "F1 הוא הממוצע ה<b>הרמוני</b> — מעניש ערכים קיצוניים; אם אחד מהם שואף לאפס, גם F1 שואף לאפס." },
+  { q: "עבור $TP=40,FP=10,FN=20$, ה-Precision הוא 0.80.", a: true, e: "$40/(40+10)=0.80$." },
+  { q: "בעקומת ROC, ציר ה-$y$ הוא TPR (Recall) וציר ה-$x$ הוא FPR.", a: true, e: "ROC משלבת TPR מול FPR על פני כל הספים." },
+  { q: "$AUC=0.5$ מעיד על מודל מושלם.", a: false, e: "$AUC=0.5$ = ניחוש אקראי; $AUC=1$ = מודל מושלם." },
+  { q: "מודלים שאומנו עם Cross-Entropy נוטים להיות 'בטוחים מדי' בהסתברויות שהם מוציאים.", a: true, e: "לכן צריך כיול — הסתברות 0.9 לא בהכרח מייצגת דיוק 90%." },
+  { q: "Temperature Scaling משתמש בפרמטר יחיד לריכוך ה-Softmax והוא היעיל ביותר לכיול.", a: true, e: "פרמטר $T$ אחד מרכך את ההסתברויות — פשוט ויעיל." },
+  { q: "אם שני אירועים $A,B$ מופיעים יחד, זה מוכיח ש-$A$ גורם ל-$B$.", a: false, e: "מתאם אינו סיבתיות — ייתכן משתנה שלישי שגורם לשניהם. לבדיקת סיבתיות מבצעים התערבות $do(\\cdot)$." },
+  { q: "קריטריון 'סיכויים שווים' (Equalized Odds) דורש TPR ו-FPR זהים בכל הקבוצות.", a: true, e: "זו ההגדרה — שוויון בשיעור החיובי-האמיתי והחיובי-השגוי בין קבוצות." },
+  { q: "קבוצות מיעוט המיוצגות פחות בנתונים נוטות לקבל דיוק נמוך יותר מהמודל.", a: true, e: "פחות דוגמאות ⟹ המודל לא לומד אותן היטב ⟹ שגיאות גבוהות יותר — מקור לאי-הוגנות." },
+  { q: "אם המודל מצטיין ב-Recall אך גרוע ב-Precision, ה-F1 יהיה גבוה.", a: false, e: "F1 (ממוצע הרמוני) נמוך כשאחד המדדים נמוך — הוא מחייב איזון בין השניים." },
+  { q: "Platt Scaling מכייל הסתברויות ע\"י התאמת פונקציית סיגמואיד $\\sigma(a\\cdot y+b)$.", a: true, e: "לומדים שני פרמטרים $a,b$ להמרת הפלט הלא-מכויל למכויל." }
+]);
+</script>
+</body>
+</html>

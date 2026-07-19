@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>טרנספורמרים ו-NLP · ML Study Hub</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links"><a href="../index.html">בית</a><a href="../quiz.html" class="cta">🎲 חידון</a></nav>
+  </div>
+</header>
+
+<main class="wrap content">
+  <div class="topic-head">
+    <div class="eyebrow">נושא 13 · הרצאה 11</div>
+    <h1>🔤 טרנספורמרים ו-NLP</h1>
+    <p>מייצוג מילים כווקטורים (Word2Vec) ועד לארכיטקטורת ה-Transformer: Tokenization, Self-Attention, Multi-Head, Positional Encoding ו-Add&Norm.</p>
+  </div>
+
+  <div class="goals">
+    <h2>🎯 מטרות הנושא</h2>
+    <ul>
+      <li>להבין את בעיית ה-One-Hot ואת פתרון ה-Embeddings (Word2Vec).</li>
+      <li>להבין Tokenization (BPE) ומדוע צריך אותה.</li>
+      <li>לגזור ולחשב Self-Attention ($Q,K,V$).</li>
+      <li>להבין Multi-Head, Positional Encoding, Feed-Forward ו-Add&Norm.</li>
+    </ul>
+  </div>
+
+  <section class="block reveal">
+    <h2>1. Word Embeddings <span class="tag">Word2Vec</span></h2>
+    <p><b>One-Hot:</b> כל מילה = וקטור באורך $|V|$ עם 1 יחיד. חסרונות: אין דמיון בין מילים (וקטורים אורתוגונליים), קללת המימד, דלילות.</p>
+    <div class="def">
+      <span class="lbl">Word2Vec (Skip-gram)</span><br>
+      ההנחה: משמעות מילה נגזרת מהמילים שסביבה. מנבאים מילות הקשר בהינתן מילת מרכז:
+      $$P(o|c)=\frac{\exp(u_o^Tv_c)}{\sum_{w\in V}\exp(u_w^Tv_c)},\qquad J(\theta)=-\tfrac1T\sum_t\sum_{-m\le j\le m,j\neq0}\log P(w_{t+j}|w_t).$$
+    </div>
+    <div class="note">
+      <span class="lbl">מרחב סמנטי</span><br>
+      מילים בהקשרים דומים מקבלות וקטורים קרובים במרחב — אפשר למדוד דמיון. בסיום, שומרים רק את וקטורי המרכז $v_w$. אימון עם SGD.
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>2. Tokenization <span class="tag">BPE</span></h2>
+    <p>הופכים טקסט לוקטורים. פיצול לפי מילים שלמות נכשל: מילים לא-מוכרות (UNK), אין קשר בין <code>run/running</code>, אוצר מילים ענק. הפתרון: <b>Sub-word tokenization</b> (BPE) — מפרקים מילים לחלקי-מילים נפוצים.</p>
+    <div class="note">
+      <span class="lbl">BPE</span><br>
+      מתחילים מתווים בודדים, ובאופן איטרטיבי מאחדים את זוג התווים הנפוץ ביותר. מילים נפוצות (<code>the</code>) נשארות שלמות; נדירות (<code>unhappy</code>) מתפרקות ל-<code>un+happy</code>. יתרון: אין UNK, אוצר מילים מצטמצם.
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>3. Self-Attention <span class="tag">לב הטרנספורמר</span></h2>
+    <p>כל טוקן מוטל לשלושה וקטורים: <b>Query</b> ($q$ — מה אני מחפש), <b>Key</b> ($k$ — מה אני מציע), <b>Value</b> ($v$ — התוכן). $Q=XW^Q$, $K=XW^K$, $V=XW^V$.</p>
+    <div class="def">
+      <span class="lbl">נוסחת ה-Attention</span><br>
+      $$\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\!\Big(\frac{QK^T}{\sqrt{d_k}}\Big)V.$$
+      $QK^T$ = מטריצת התאמות; $\sqrt{d_k}$ = מנרמל ערכים גדולים; softmax = הופך להסתברויות; כפל ב-$V$ = ייצוג הקשרי חדש.
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> טוקן עם $q=(1,0)$, שני טוקנים עם $k_1=(1,0),\ k_2=(0,1)$, ערכים $v_1=(2,0),\ v_2=(0,4)$, $d_k=2$.</div>
+      <div class="step"><b>ציונים:</b> $q\cdot k_1=1$, $q\cdot k_2=0$. מנורמל: $\tfrac1{\sqrt2}=0.707$ ⟹ $(0.707, 0)$.</div>
+      <div class="step"><b>Softmax:</b> $\tfrac{e^{0.707}}{e^{0.707}+e^0}=\tfrac{2.028}{3.028}=0.67$; השני $0.33$.</div>
+      <div class="step"><b>פלט:</b> $0.67\cdot v_1 + 0.33\cdot v_2 = 0.67(2,0)+0.33(0,4)=(1.34,\ 1.32)$ — שילוב משוקלל שמדגיש את הטוקן הדומה ל-Query.</div>
+    </div>
+    <div class="note">
+      <span class="lbl">Multi-Head</span><br>
+      במקום ראש אחד, $h$ ראשים במקביל, כל אחד עם $W^Q,W^K,W^V$ משלו — לומדים סוגי קשרים שונים (תחבירי, סמנטי). הפלטים משורשרים.
+    </div>
+    <div class="note">
+      <span class="lbl">Positional Encoding</span><br>
+      Self-Attention אדיש לסדר (אינווריאנטי לפרמוטציות) — <code>Dog bites man</code> = <code>Man bites dog</code>! מזריקים מידע מיקום (סינוס/קוסינוס) ל-Embeddings לפני ה-Encoder.
+    </div>
+    <div class="note">
+      <span class="lbl">Add & Norm ו-FFN</span><br>
+      <b>Add (Residual):</b> $\mathrm{Output}=\mathrm{LayerNorm}(x+\mathrm{Sublayer}(x))$ — מונע דעיכת גרדיאנטים. <b>Feed-Forward:</b> $\mathrm{FFN}(x)=\max(0,xW_1+b_1)W_2+b_2$ — מוסיף אי-לינאריות לכל טוקן. עלות ה-Attention ריבועית באורך הרצף ($n\times n$).
+    </div>
+  </section>
+
+  <div id="tf" class="tf-quiz reveal"></div>
+
+  <div class="topic-nav">
+    <a class="btn" href="generative.html">→ הקודם: מודלים גנרטיביים</a>
+    <a class="btn primary" href="evaluation.html">הבא: הערכה והוגנות ←</a>
+  </div>
+</main>
+
+<footer><div class="wrap">ML Study Hub · נושא 13 מתוך 14</div></footer>
+
+<script src="../js/site.js"></script>
+<script>
+TFQuiz.render('#tf', [
+  { q: "בייצוג One-Hot, כל זוג מילים שונות מקבל וקטורים אורתוגונליים ⟹ אי אפשר למדוד דמיון.", a: true, e: "$u_{w1}^Tu_{w2}=0$ תמיד — אין מושג של קרבה סמנטית בייצוג One-Hot." },
+  { q: "Word2Vec מבוסס על ההנחה שמשמעות מילה נגזרת מהמילים שמופיעות סביבה.", a: true, e: "Skip-gram מנבא מילות הקשר בהינתן מילת מרכז — מילים בהקשרים דומים מקבלות וקטורים קרובים." },
+  { q: "פיצול טקסט לפי מילים שלמות פותר לחלוטין את בעיית המילים הלא-מוכרות.", a: false, e: "להיפך — מילים לא-מוכרות הופכות ל-UNK. BPE (sub-word) פותר זאת ע\"י פירוק לחלקי-מילים." },
+  { q: "BPE מאחד באופן איטרטיבי את זוגות התווים הנפוצים ביותר.", a: true, e: "כך מילים נפוצות נשארות שלמות ונדירות מתפרקות — אין UNK, אוצר מילים קטן." },
+  { q: "ב-Self-Attention, ה-Query מייצג 'מה אני מחפש' וה-Key 'מה אני מציע'.", a: true, e: "$q$ שואל, $k$ נמצא ע\"י שאילתות, $v$ הוא התוכן שמועבר." },
+  { q: "נוסחת ה-Attention מחלקת ב-$\\sqrt{d_k}$ כדי למנוע ערכים גדולים מדי לפני ה-softmax.", a: true, e: "הנרמול מייצב את הגרדיאנטים ומונע רוויה של ה-softmax." },
+  { q: "Self-Attention רגיש מטבעו לסדר המילים במשפט.", a: false, e: "הוא <b>אדיש</b> לסדר (אינווריאנטי לפרמוטציות); לכן מוסיפים Positional Encoding." },
+  { q: "Positional Encoding מוזרק ל-Embeddings כדי לתת לרשת מידע על מיקום הטוקנים.", a: true, e: "בלעדיו הרשת לא מבחינה בין 'כלב נשך אדם' ל'אדם נשך כלב'." },
+  { q: "Multi-Head Attention מאפשר ללמוד סוגי קשרים שונים במקביל.", a: true, e: "כל ראש עם $W^Q,W^K,W^V$ משלו לומד היבט אחר (תחבירי/סמנטי), והפלטים משורשרים." },
+  { q: "רכיב ה-Add (Residual) ב-Add&Norm עוזר למנוע דעיכת גרדיאנטים.", a: true, e: "$x+\\mathrm{Sublayer}(x)$ יוצר קיצור-דרך לגרדיאנט, בדומה ל-ResNet." },
+  { q: "העלות החישובית של Self-Attention לינארית באורך הרצף.", a: false, e: "היא <b>ריבועית</b> — מטריצת ה-Attention בגודל $n\\times n$ (כל זוג טוקנים)." },
+  { q: "ה-Feed-Forward Layer מוסיף אי-לינאריות (ReLU) לכל טוקן בנפרד.", a: true, e: "$\\mathrm{FFN}(x)=\\max(0,xW_1+b_1)W_2+b_2$ — פועל על כל טוקן, מעשיר את הייצוג." },
+  { q: "בסיום אימון Word2Vec, לרוב שומרים רק את וקטורי המרכז $v_w$.", a: true, e: "וקטורי ההקשר $u_w$ נזרקים; וקטורי המרכז הם ה-Embeddings הסופיים." },
+  { q: "המטריצות $Q,K,V$ מחושבות ע\"י הכפלת הקלט במטריצות משקולות נלמדות.", a: true, e: "$Q=XW^Q,K=XW^K,V=XW^V$ — המשקולות נלמדות באימון." },
+  { q: "Softmax בנוסחת ה-Attention הופך את ציוני ההתאמה למשקלים שסכומם 1.", a: true, e: "כך כל טוקן 'לוקח' אחוז מוגדר מהמידע של כל טוקן אחר." }
+]);
+</script>
+</body>
+</html>

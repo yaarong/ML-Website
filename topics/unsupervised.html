@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>למידה לא מונחית · ML Study Hub</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links"><a href="../index.html">בית</a><a href="../quiz.html" class="cta">🎲 חידון</a></nav>
+  </div>
+</header>
+
+<main class="wrap content">
+  <div class="topic-head">
+    <div class="eyebrow">נושא 11 · הרצאה 9</div>
+    <h1>🪐 למידה לא מונחית</h1>
+    <p>למידה ללא תוויות: מציאת מבנה בנתונים. אשכול (K-Means), מודל תערובת גאוסיאנים (GMM) עם EM, והורדת מימד עם PCA — כולל הוכחות התכנסות והפתרון האופטימלי.</p>
+  </div>
+
+  <div class="goals">
+    <h2>🎯 מטרות הנושא</h2>
+    <ul>
+      <li>להבין את שלושת יעדי הלמידה הלא-מונחית: מבנה, יצירה, וייצוג יעיל.</li>
+      <li>להריץ K-Means ולהוכיח את התכנסותו.</li>
+      <li>להבין GMM ואלגוריתם EM.</li>
+      <li>לגזור PCA כמזעור שגיאת שחזור / מקסום שונות, ולהוכיח את פתרון הוקטור העצמי.</li>
+    </ul>
+  </div>
+
+  <section class="block reveal">
+    <h2>1. K-Means <span class="tag">Clustering</span></h2>
+    <p>מטרה: למצוא $K$ אבות-טיפוס $\{\mu_1,\dots,\mu_K\}$ הממזערים את סכום המרחקים הריבועיים:</p>
+    $$\mu^\star=\arg\min_\mu\sum_{i=1}^n\min_{j}\|x_i-\mu_j\|^2.$$
+    <p>הבעיה לא-קמורה (NP-קשה), לכן אלגוריתם היוריסטי איטרטיבי:</p>
+    <pre class="code"><span class="cm"># K-Means (Lloyd)</span>
+init K centroids randomly
+<span class="kw">repeat</span>:
+  E-step: assign each xᵢ to nearest centroid
+  M-step: μⱼ ← mean of points assigned to cluster j
+<span class="kw">until</span> assignments stop changing</pre>
+    <div class="thm">
+      <span class="lbl">משפט — K-Means מתכנס</span><br>
+      פונקציית המטרה $J(\mu,r)=\sum_i\sum_j r_{ij}\|x_i-\mu_j\|^2$ יורדת מונוטונית בשני השלבים, ולכן האלגוריתם עוצר.
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה</span><br>
+      <b>E-step:</b> בהינתן מרכזים קבועים, כל נקודה משויכת למרכז הקרוב ביותר ⟹ $J(\mu^{(t)},r^{(t+1)})\le J(\mu^{(t)},r^{(t)})$.<br>
+      <b>M-step:</b> גזירה $\nabla_{\mu_j}J=\sum_i r_{ij}\cdot2(\mu_j-x_i)=0 \Rightarrow \mu_j=\dfrac{\sum_i r_{ij}x_i}{\sum_i r_{ij}}$ (הממוצע) ⟹ $J(\mu^{(t+1)},r^{(t+1)})\le J(\mu^{(t)},r^{(t+1)})$.<br>
+      לכן $J$ אינה עולה. מספר השיוכים הוא סופי ($K^n$), ו-$J\ge0$ — לא ניתן לחזור על שיוך קודם, ולכן האלגוריתם מתכנס. (למינימום <b>מקומי</b>, לא בהכרח גלובלי.)
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> נקודות 1D: $\{1,2,3,10,11,12\}$, $K=2$, מרכזים התחלתיים $\mu_1=1,\mu_2=2$.</div>
+      <div class="step"><b>איטרציה 1 — E:</b> שיוך לפי קרבה: ל-$\mu_1=1$ שייך $\{1\}$; ל-$\mu_2=2$ שייך $\{2,3,10,11,12\}$.</div>
+      <div class="step"><b>איטרציה 1 — M:</b> $\mu_1=1$, $\mu_2=\tfrac{2+3+10+11+12}{5}=7.6$.</div>
+      <div class="step"><b>איטרציה 2 — E:</b> כעת $\{1,2,3\}\to\mu_1$, $\{10,11,12\}\to\mu_2$.</div>
+      <div class="step"><b>איטרציה 2 — M:</b> $\mu_1=\tfrac{1+2+3}{3}=2$, $\mu_2=\tfrac{10+11+12}{3}=11$.</div>
+      <div class="step"><b>התכנסות:</b> השיוכים לא משתנים יותר — האשכולות $\{1,2,3\}$ ו-$\{10,11,12\}$. ✓</div>
+    </div>
+    <div class="warn">
+      <span class="lbl">מגבלות</span> רגיש לאתחול (מריצים כמה פעמים ובוחרים $J$ מינימלי), מניח אשכולות כדוריים, רגיש לחריגים, וסובל מקללת המימד. $K$ נקבע מראש.
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>2. GMM ואלגוריתם EM <span class="tag">הסתברותי</span></h2>
+    <p>מודל תערובת גאוסיאנים: $\;P(x|\theta)=\sum_{k=1}^K \pi_k\,\mathcal N(x|\mu_k,\Sigma_k)$, עם $\sum_k\pi_k=1$. ממקסמים Log-Likelihood ע״י EM:</p>
+    <div class="note">
+      <span class="lbl">אלגוריתם EM</span><br>
+      <b>E-step:</b> מחשבים "אחריות" (Posterior רך): $\gamma_{ik}=\dfrac{\pi_k\mathcal N(x_i|\mu_k,\Sigma_k)}{\sum_j\pi_j\mathcal N(x_i|\mu_j,\Sigma_j)}$.<br>
+      <b>M-step:</b> מעדכנים $\mu_k=\dfrac{\sum_i\gamma_{ik}x_i}{\sum_i\gamma_{ik}}$, $\pi_k=\tfrac1n\sum_i\gamma_{ik}$, וכן $\Sigma_k$.
+    </div>
+    <table>
+      <tr><th></th><th>K-Means</th><th>GMM</th></tr>
+      <tr><td>שיוך</td><td>קשיח (0/1)</td><td>רך (הסתברותי $\gamma_{ik}$)</td></tr>
+      <tr><td>צורה</td><td>כדורית</td><td>אליפטית (אניזוטרופית)</td></tr>
+      <tr><td>פרמטרים</td><td>מרכזים בלבד</td><td>$\mu,\Sigma,\pi$</td></tr>
+    </table>
+  </section>
+
+  <section class="block reveal">
+    <h2>3. PCA <span class="tag">הורדת מימד</span></h2>
+    <p>מוצאים תת-מרחב לינארי מדרגה $r<d$ שממזער את שגיאת השחזור. מנרמלים תחילה (ממוצע 0). מגדירים $\mathrm{Cov}(X)=\tfrac1n X^TX = U\Lambda U^T$.</p>
+    <div class="thm">
+      <span class="lbl">משפט — פתרון PCA</span><br>
+      מזעור שגיאת השחזור $\min_{V:V^TV=I}\sum_i\|VV^Tx_i-x_i\|^2$ מתקבל כאשר עמודות $V$ הן הוקטורים העצמיים של $\mathrm{Cov}(X)$ המתאימים ל-$r$ הערכים העצמיים הגדולים ביותר.
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה (מקרה $r=1$)</span><br>
+      עבור וקטור יחיד $v$ עם $\|v\|=1$, מזעור שגיאת השחזור שקול ל-
+      $$\arg\max_{\|v\|=1} v^T\Big(\sum_i x_ix_i^T\Big)v = \arg\max_{\|v\|=1} v^T\mathrm{Cov}(X)\,v.$$
+      נרשום $v=\sum_j\alpha_j u_j$ (בבסיס העצמי) עם $\sum\alpha_j^2=1$. אז $v^TCv=\sum_j\lambda_j\alpha_j^2$. כיוון שהערכים ממוינים ($\lambda_1$ הגדול), המקסימום מושג ב-$\alpha_1=1$ והשאר אפס, כלומר $v=u_1$ — הוקטור העצמי של הערך העצמי הגדול ביותר. $\blacksquare$
+    </div>
+    <div class="thm">
+      <span class="lbl">משפט — שקילות למקסום שונות ולביטול מתאם</span><br>
+      PCA שקול למקסום שונות ההטלות; המרחב החדש $A=XV$ הוא בעל שונות משותפת אלכסונית $\mathrm{Cov}(A)=\Lambda$ — המאפיינים החדשים בלתי-מתואמים.
+    </div>
+    <p>השגיאה שנאבדת בהורדה ל-$r$ מימדים: $\dfrac{1}{n-1}\sum_i\|VV^Tx_i-x_i\|^2=\sum_{j=r+1}^d\lambda_j$ — סכום הערכים העצמיים שלא נלקחו.</p>
+    <div class="run">
+      <div class="step"><b>נתון:</b> $\mathrm{Cov}(X)$ עם ערכים עצמיים $\lambda=(4.0, 0.8, 0.15, 0.05)$ (ממוינים).</div>
+      <div class="step"><b>ל-$r=2$:</b> לוקחים את 2 הוקטורים העצמיים של $\lambda_1=4.0,\lambda_2=0.8$.</div>
+      <div class="step"><b>אחוז שונות שנשמר:</b> $\tfrac{4.0+0.8}{4.0+0.8+0.15+0.05}=\tfrac{4.8}{5.0}=96\%$.</div>
+      <div class="step"><b>שגיאת שחזור:</b> $\lambda_3+\lambda_4=0.15+0.05=0.2$ — קטנה. הורדה מ-4 ל-2 ממדים כמעט ללא איבוד מידע. ✓</div>
+    </div>
+    <div class="note">
+      <span class="lbl">Autoencoder</span><br>
+      PCA הוא Autoencoder <b>לינארי</b>: Encoder $a=V^Tx$, Decoder $x'=Va$. רשתות ניורונים מרחיבות זאת לפונקציות לא-לינאריות. הפסד $\|x'-x\|^2$; אילוץ Bottleneck (מימד קטן) מכריח דחיסה.
+    </div>
+  </section>
+
+  <div id="tf" class="tf-quiz reveal"></div>
+
+  <div class="topic-nav">
+    <a class="btn" href="optimization.html">→ הקודם: אופטימיזציה</a>
+    <a class="btn primary" href="generative.html">הבא: מודלים גנרטיביים ←</a>
+  </div>
+</main>
+
+<footer><div class="wrap">ML Study Hub · נושא 11 מתוך 14</div></footer>
+
+<script src="../js/site.js"></script>
+<script>
+TFQuiz.render('#tf', [
+  { q: "K-Means מובטח למצוא את המינימום הגלובלי של פונקציית המטרה.", a: false, e: "K-Means מתכנס למינימום <b>מקומי</b> בלבד ורגיש לאתחול; לכן מריצים כמה פעמים ובוחרים את ה-$J$ הנמוך." },
+  { q: "פונקציית המטרה של K-Means יורדת מונוטונית בשלבי ה-E וה-M.", a: true, e: "E-step מקטין את $J$ (שיוך למרכז הקרוב), M-step מקטין את $J$ (ממוצע ממזער); לכן $J$ אינה עולה — בסיס ההתכנסות." },
+  { q: "ב-M-step של K-Means, המרכז החדש הוא הממוצע של הנקודות המשויכות לאשכול.", a: true, e: "גזירת $J$ לפי $\\mu_j$ נותנת בדיוק את הממוצע $\\mu_j=\\tfrac{\\sum r_{ij}x_i}{\\sum r_{ij}}$." },
+  { q: "K-Means מתאים היטב לאשכולות בצורת חצאי-ירח (לא-כדוריים).", a: false, e: "K-Means ממזער מרחק אוקלידי ולכן 'כופה' אשכולות כדוריים; הוא נכשל על צורות כמו חצאי-ירח." },
+  { q: "GMM מבצע שיוך רך (הסתברותי) בעוד K-Means שיוך קשיח.", a: true, e: "GMM מחשב אחריות $\\gamma_{ik}\\in[0,1]$; K-Means משייך 0/1 חד-משמעי." },
+  { q: "ב-E-step של EM, מחשבים את ה'אחריות' $\\gamma_{ik}$ — Posterior רך של הדגימה למחלקה.", a: true, e: "$\\gamma_{ik}$ הוא ההסתברות שרכיב $k$ יצר את $x_i$ — Posterior." },
+  { q: "GMM מסוגל למדל אשכולות אליפטיים (אניזוטרופיים) בזכות מטריצות $\\Sigma_k$.", a: true, e: "מטריצת השונות המשותפת לכל רכיב מאפשרת צורות אליפטיות, בניגוד ל-K-Means הכדורי." },
+  { q: "PCA ממזער את שגיאת השחזור, והפתרון הוא הוקטורים העצמיים של מטריצת השונות המשותפת.", a: true, e: "המשפט: עמודות $V$ הן הוקטורים העצמיים המתאימים ל-$r$ הערכים העצמיים הגדולים ביותר." },
+  { q: "עבור $r=1$, PCA בוחר את הוקטור העצמי של הערך העצמי ה<b>קטן</b> ביותר.", a: false, e: "בוחרים את הוקטור העצמי של הערך העצמי ה<b>גדול</b> ביותר — הכיוון עם השונות המקסימלית." },
+  { q: "המאפיינים החדשים שנוצרים ב-PCA בלתי-מתואמים זה עם זה.", a: true, e: "$\\mathrm{Cov}(A)=\\Lambda$ אלכסונית ⟹ שונות משותפת אפס בין מאפיינים שונים." },
+  { q: "שגיאת השחזור בהורדה ל-$r$ ממדים שווה לסכום הערכים העצמיים ש<b>נלקחו</b>.", a: false, e: "היא שווה לסכום הערכים העצמיים ש<b>לא</b> נלקחו: $\\sum_{j=r+1}^d\\lambda_j$." },
+  { q: "PCA שקול למקסום השונות של הנתונים המוטלים.", a: true, e: "מזעור שגיאת שחזור שקול למקסום השונות המוסברת — שתי צורות של אותה בעיה." },
+  { q: "PCA הוא Autoencoder לינארי.", a: true, e: "Encoder $a=V^Tx$ ו-Decoder $x'=Va$ — פעולות לינאריות; Autoencoder מרחיב זאת ללא-לינארי." },
+  { q: "לפני הרצת PCA לא צריך לנרמל את הנתונים.", a: false, e: "מנרמלים תחילה (ממוצע 0, לרוב גם שונות 1) כדי שמאפיין עם סקאלה גדולה לא ישתלט על הכיוונים." },
+  { q: "בדוגמה, הורדה מ-4 ל-2 ממדים שמרה 96% מהשונות.", a: true, e: "$\\tfrac{4.0+0.8}{5.0}=0.96$ — כמעט ללא איבוד מידע, כי הערכים העצמיים הקטנים זניחים." }
+]);
+</script>
+</body>
+</html>

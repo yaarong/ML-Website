@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>בייס נאיבי ו-KNN · ML Study Hub</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links"><a href="../index.html">בית</a><a href="../quiz.html" class="cta">🎲 חידון</a></nav>
+  </div>
+</header>
+
+<main class="wrap content">
+  <div class="topic-head">
+    <div class="eyebrow">נושא 08 · הרצאה 6</div>
+    <h1>🔍 בייס נאיבי ו-KNN</h1>
+    <p>שני מסווגים קלאסיים ופשוטים: Naïve Bayes המבוסס על חוק בייס והנחת אי-תלות, ו-KNN המבוסס על שכנים קרובים ומטריקת מרחק.</p>
+  </div>
+
+  <div class="goals">
+    <h2>🎯 מטרות הנושא</h2>
+    <ul>
+      <li>להבין את מסווג Naïve Bayes, הנחת אי-התלות המותנית והחלקת לפלס.</li>
+      <li>להבין את KNN, את תנאי המטריקה ואת מטריקות המרחק הנפוצות.</li>
+      <li>לנתח סיבוכיות זמן ומקום ואת השפעת $K$ על Bias-Variance.</li>
+    </ul>
+  </div>
+
+  <section class="block reveal">
+    <h2>1. Naïve Bayes <span class="tag">גנרטיבי</span></h2>
+    <p>מסווגים לפי MAP: $\;c^\star=\arg\max_i P(c_i|x)=\arg\max_i P(x|c_i)P(c_i)$. הבעיה: אמידת $P(x|c_i)$ המשותפת דורשת מספר פרמטרים אקספוננציאלי. הפתרון — <b>הנחת אי-תלות מותנית</b>:</p>
+    $$P(x|c_i)=\prod_{j=1}^d P(x_j|c_i)\quad\Rightarrow\quad c^\star=\arg\max_i P(c_i)\prod_{j=1}^d P(x_j|c_i).$$
+    <div class="warn">
+      <span class="lbl">מדוע "נאיבי"?</span> ההנחה שהתכונות בלתי-תלויות לרוב לא מציאותית (למשל מילים בטקסט תלויות זו בזו). ובכל זאת פופולרי — פשוט, מהיר, ותופס מספיק תבניות מועילות.
+    </div>
+    <div class="def">
+      <span class="lbl">החלקת לפלס</span><br>
+      אם ערך תכונה לא הופיע באימון תחת מחלקה, $P(x_j|c_i)=0$ מאפס את כל המכפלה. הפתרון: קבוע חיובי קטן $\alpha$ (לרוב 1):
+      $$P(x_j|c_i)=\frac{\mathrm{count}(x_j,c_i)+\alpha}{\mathrm{count}(c_i)+\alpha|V|}.$$
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> סיווג מייל כ-Spam/Ham. $P(\text{Spam})=0.4,\ P(\text{Ham})=0.6$. המילה "חינם": $P(\text{חינם}|\text{Spam})=0.5$, $P(\text{חינם}|\text{Ham})=0.1$. המילה "פגישה": $P(\text{פגישה}|\text{Spam})=0.1$, $P(\text{פגישה}|\text{Ham})=0.4$. מייל מכיל את שתי המילים.</div>
+      <div class="step"><b>ציון Spam:</b> $0.4\cdot0.5\cdot0.1=0.020$.</div>
+      <div class="step"><b>ציון Ham:</b> $0.6\cdot0.1\cdot0.4=0.024$.</div>
+      <div class="step"><b>החלטה:</b> $0.024>0.020 \Rightarrow$ המייל מסווג כ-<b>Ham</b> (בהפרש קטן).</div>
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>2. KNN <span class="tag">שכנים קרובים</span></h2>
+    <p>הנחת היסוד: דגימות עם מאפיינים דומים שייכות לאותה מחלקה. אין שלב אימון מפורש — בזמן חיזוי מוצאים את $k$ השכנים הקרובים ומחזירים את מחלקת הרוב.</p>
+    <pre class="code"><span class="cm"># KNN</span>
+Require: metric d, k, test x
+  find the k nearest training points to x by d
+  return majority class among them</pre>
+    <div class="def">
+      <span class="lbl">מטריקה (פונקציית מרחק)</span><br>
+      חייבת לקיים: (א) $d(x,y)\ge0$; (ב) $d(x,x)=0$; (ג) סימטריות $d(x,y)=d(y,x)$; (ד) אי-שוויון המשולש $d(x,y)+d(y,z)\ge d(x,z)$.
+    </div>
+    <p>מטריקות נפוצות: <b>אוקלידי</b> $d(x,y)=\sqrt{\sum(x_i-y_i)^2}$; <b>דמיון קוסינוס</b> $s(x,y)=\dfrac{x\cdot y}{\|x\|\|y\|}$ (הופכים למרחק ע״י $d=\tfrac{1-s}{2}$).</p>
+    <div class="run">
+      <div class="step"><b>נתון:</b> אימון: $A=(1,1)$ כחול, $B=(2,2)$ כחול, $C=(4,5)$ אדום, $D=(5,4)$ אדום. נסווג $x=(3,3)$ עם $k=3$ (אוקלידי).</div>
+      <div class="step"><b>מרחקים²:</b> $d_A^2=(3-1)^2+(3-1)^2=8$; $d_B^2=1+1=2$; $d_C^2=1+4=5$; $d_D^2=4+1=5$.</div>
+      <div class="step"><b>3 הקרובים:</b> $B(2)$, $C(5)$, $D(5)$ ⟵ כחול, אדום, אדום.</div>
+      <div class="step"><b>הצבעת רוב:</b> 2 אדומים מול 1 כחול ⟹ $x$ מסווג <b>אדום</b>.</div>
+      <div class="step"><b>שים לב:</b> עם $k=1$ היה נבחר $B$ (הכי קרוב) ⟹ כחול. $k$ משנה את התוצאה!</div>
+    </div>
+    <div class="note">
+      <span class="lbl">סיבוכיות והשפעת $K$</span><br>
+      זמן חיזוי: $O(nd)$ למרחקים, $O(nkd)$ לנקודות; מקום: $O(nd)$ (שומרים הכל). $K=1$ ⟵ הפסד אפס על האימון אך רגיש לרעש (שונות גבוהה). $K$ גדול ⟵ הטיה גבוהה. סובל מקללת המימד ומרגישות למטריקה.
+    </div>
+  </section>
+
+  <div id="tf" class="tf-quiz reveal"></div>
+
+  <div class="topic-nav">
+    <a class="btn" href="trees.html">→ הקודם: עצי החלטה</a>
+    <a class="btn primary" href="deep-learning.html">הבא: למידה עמוקה ←</a>
+  </div>
+</main>
+
+<footer><div class="wrap">ML Study Hub · נושא 8 מתוך 14</div></footer>
+
+<script src="../js/site.js"></script>
+<script>
+TFQuiz.render('#tf', [
+  { q: "הנחת אי-התלות המותנית ב-Naïve Bayes אומרת ש-$P(x|c)=\\prod_j P(x_j|c)$.", a: true, e: "זו ההנחה שמפרקת את ההסתברות המשותפת למכפלה ומקטינה דרסטית את מספר הפרמטרים." },
+  { q: "הנחת אי-התלות ב-Naïve Bayes תמיד מציאותית ומדויקת.", a: false, e: "לרוב היא לא מציאותית (מילים בטקסט תלויות זו בזו), אך המודל עדיין עובד טוב בפועל." },
+  { q: "בלי החלקת לפלס, ערך תכונה שלא נראה באימון מאפס את כל המכפלה של המחלקה.", a: true, e: "$P(x_j|c)=0$ ⟹ המכפלה כולה מתאפסת; לכן מוסיפים $\\alpha$ (החלקה) למנוע זאת." },
+  { q: "Naïve Bayes הוא מסווג דיסקרימינטיבי שלומד ישירות את גבול ההחלטה.", a: false, e: "הוא מסווג <b>גנרטיבי</b> — מודל את $P(x|c)$ ו-$P(c)$ ומשתמש בבייס, לא לומד גבול ישירות." },
+  { q: "ב-KNN אין שלב אימון מפורש.", a: true, e: "כל העבודה נעשית בזמן החיזוי — מוצאים שכנים ומצביעים; אין למידת פרמטרים מראש." },
+  { q: "פונקציית מרחק (מטריקה) חייבת לקיים את אי-שוויון המשולש.", a: true, e: "זה אחד מארבעת תנאי המטריקה: $d(x,y)+d(y,z)\\ge d(x,z)$." },
+  { q: "דמיון קוסינוס הוא כבר מטריקת מרחק תקינה ל-KNN בלי המרה.", a: false, e: "דמיון קוסינוס מחזיר ערך גבוה לקרבה (הפוך ממרחק); ממירים אותו ע\"י $d=\\tfrac{1-s}{2}$ או $d=1/s$." },
+  { q: "ב-KNN, בחירת $k$ גדול מגדילה את ההטיה (Bias) של המסווג.", a: true, e: "$k$ גדול ממצע על יותר שכנים ⟵ החלטה חלקה יותר אך מוטה; $k=1$ ⟵ שונות גבוהה." },
+  { q: "עם $K=1$, ל-KNN יש שגיאת אימון אפס.", a: true, e: "כל נקודת אימון היא השכן הקרוב ביותר לעצמה, ולכן מסווגת נכון — אבל רגיש מאוד לרעש." },
+  { q: "KNN אינו סובל מקללת המימד ועובד מצוין בממדים גבוהים.", a: false, e: "KNN דווקא סובל מקללת המימד — בממד גבוה המרחקים מתקרבים זה לזה והמטריקה מאבדת משמעות." },
+  { q: "בדוגמה המספרית, שינוי מ-$k=3$ ל-$k=1$ שינה את הסיווג של הנקודה.", a: true, e: "עם $k=3$ הרוב אדום, אך עם $k=1$ השכן הקרוב הוא הכחול $B$ ⟹ סיווג שונה." },
+  { q: "סיבוכיות המקום של KNN היא $O(1)$ כי הוא לא שומר את נתוני האימון.", a: false, e: "KNN שומר את <b>כל</b> נתוני האימון — סיבוכיות מקום $O(nd)$; הוא בדיוק אלגוריתם 'עצלן' שדוחה את כל העבודה לזמן החיזוי." }
+]);
+</script>
+</body>
+</html>

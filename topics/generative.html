@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מודלים גנרטיביים ו-SSL · ML Study Hub</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links"><a href="../index.html">בית</a><a href="../quiz.html" class="cta">🎲 חידון</a></nav>
+  </div>
+</header>
+
+<main class="wrap content">
+  <div class="topic-head">
+    <div class="eyebrow">נושא 12 · הרצאה 10</div>
+    <h1>✨ מודלים גנרטיביים ו-SSL</h1>
+    <p>למידה כשאין תוויות: Self-Supervised Learning, Transfer Learning, Autoencoders על סוגיהם, ומודלי Diffusion שיוצרים תמונות מרעש.</p>
+  </div>
+
+  <div class="goals">
+    <h2>🎯 מטרות הנושא</h2>
+    <ul>
+      <li>להבין Self-Supervised Learning ו-Transfer Learning ומדוע הם חשובים כשדטה מתויג יקר.</li>
+      <li>להכיר Autoencoders, Bottleneck, קוד לטנטי וסוגי AE (CAE, VAE, Denoising).</li>
+      <li>להבין מודלי Diffusion: תהליך הרעש, תהליך היצירה, אימון ודגימה.</li>
+    </ul>
+  </div>
+
+  <section class="block reveal">
+    <h2>1. Self-Supervised & Transfer Learning <span class="tag">מוטיבציה</span></h2>
+    <p>דטה מתויג יקר ולעיתים נדיר. הרעיון: להשתמש בדטה <b>לא-מתויג</b> עם שיטות של למידה מונחית — התווית מגיעה מהנתונים עצמם.</p>
+    <div class="note">
+      <span class="lbl">Transfer Learning</span><br>
+      לוקחים רשת עמוקה שלמדה ייצוג טוב, משמרים את שכבות הייצוג, ומאמנים מחדש רק את שכבת הסיווג על משימה חדשה — חוסכים המון דטה. רשת עמוקה עושה שני דברים: לומדת <b>ייצוג</b>, ואז <b>מסווגת</b>.
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>2. Autoencoders <span class="tag">דחיסה</span></h2>
+    <p>מודל שלוקח קלט, דוחס אותו לייצוג פנימי (קוד לטנטי $z$), ומשחזר אותו. התווית היא הנתונים עצמם.</p>
+    <div class="def">
+      <span class="lbl">Bottleneck</span><br>
+      מספר מימדים קטן מהקלט המקורי. אילוץ זה מכריח את המודל לשמור רק מידע חיוני ולהסיר יתירות — אחרת ילמד את פונקציית הזהות ולא ילמד דבר.
+    </div>
+    <table>
+      <tr><th>סוג</th><th>מאפיין</th></tr>
+      <tr><td>Convolutional (CAE)</td><td>שכבות קונבולוציה, יעיל לתמונות, משמר קשרים מקומיים</td></tr>
+      <tr><td>Transformer</td><td>מנגנון Attention, ל-NLP</td></tr>
+      <tr><td>Variational (VAE)</td><td>ממפה להתפלגות ($\mu,\sigma$), דוגם $z=\mu+\sigma\odot\varepsilon$</td></tr>
+      <tr><td>Denoising</td><td>מקבל קלט מלוכלך $\tilde x$ ומשחזר את הנקי — מכריח להבין את מבנה הנתונים</td></tr>
+    </table>
+    <div class="note">
+      <span class="lbl">Denoising AE</span><br>
+      מוסיפים רעש אקראי לקלט: $\tilde x=c(x)$, ומאמנים לשחזר את $x$ המקורי. כיוון שהרעש משתנה בכל פעם, המודל לא יכול לשנן — הוא נאלץ ללמוד את המהות. יש טרייד-אוף: מעט מדי רעש ⟵ לא לומד; יותר מדי ⟵ מאבד מידע.
+    </div>
+    <div class="warn">
+      <span class="lbl">AE מול PCA</span> AE מסוגל למדל פונקציות לא-לינאריות (מזכיר PCA רק עם שכבה חבויה יחידה לינארית); דורש יותר חישוב; נוטה ל-Overfitting (צריך רגולריזציה). PCA מהיר, לינארי, נוטה ל-Underfitting.
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>3. Diffusion Models <span class="tag">יצירה</span></h2>
+    <p>מוסיפים לתמונה רעש בהדרגה (Forward), ומאמנים רשת לבצע את הכיוון ההפוך — לשחזר מהרעש (Reverse).</p>
+    <div class="def">
+      <span class="lbl">התהליך הקדמי</span><br>
+      $q(x^{t+1}|x^t)\sim\mathcal N(\sqrt{1-\beta_t}\,x^t,\ \beta_t I)$, כאשר $\beta_t$ קובעים כמה רעש להוסיף בכל צעד. ניתן לדלג ישירות: $q(x^t|x^0)=\mathcal N(\sqrt{\bar\alpha_t}\,x^0,\ (1-\bar\alpha_t)I)$ עם $\bar\alpha_t=\prod_{s=1}^t(1-\beta_s)$.
+    </div>
+    <pre class="code"><span class="cm"># Training</span>
+<span class="kw">repeat</span>:
+  x₀ ~ data ;  t ~ Uniform(1..T) ;  ε ~ N(0,I)
+  grad step on ‖ε − ε_θ(√ᾱ·x₀ + √(1−ᾱ)·ε, t)‖²
+<span class="kw">until</span> converged</pre>
+    <div class="note">
+      <span class="lbl">מהות</span><br>
+      הרשת $\varepsilon_\theta$ לומדת לחזות את הרעש שנוסף בכל שלב. אם יודעים איזה רעש נוסף — אפשר להסירו ולהתקרב לתמונה האמיתית. זו למידה לא-מונחית (אין תוויות). בדגימה: מתחילים מרעש טהור $x_T\sim\mathcal N(0,I)$ ומסירים רעש צעד-צעד עד לתמונה $x_0$.</div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> Forward step, $x^0=10$, $\beta_1=0.1$. נחשב את התפלגות $x^1$.</div>
+      <div class="step"><b>ממוצע:</b> $\sqrt{1-\beta_1}\cdot x^0=\sqrt{0.9}\cdot10=0.949\cdot10=9.49$.</div>
+      <div class="step"><b>שונות:</b> $\beta_1=0.1$. לכן $x^1\sim\mathcal N(9.49,\,0.1)$ — התמונה מעט "התכהתה" לכיוון אפס ונוסף רעש קטן.</div>
+      <div class="step"><b>אחרי T צעדים:</b> $\bar\alpha_T\to0$, ולכן $q(x^T|x^0)\to\mathcal N(0,I)$ — רעש טהור. זו נקודת הפתיחה ליצירה.</div>
+    </div>
+  </section>
+
+  <div id="tf" class="tf-quiz reveal"></div>
+
+  <div class="topic-nav">
+    <a class="btn" href="unsupervised.html">→ הקודם: למידה לא מונחית</a>
+    <a class="btn primary" href="transformers.html">הבא: טרנספורמרים ו-NLP ←</a>
+  </div>
+</main>
+
+<footer><div class="wrap">ML Study Hub · נושא 12 מתוך 14</div></footer>
+
+<script src="../js/site.js"></script>
+<script>
+TFQuiz.render('#tf', [
+  { q: "Self-Supervised Learning משתמש בדטה לא-מתויג, כשהתווית מגיעה מהנתונים עצמם.", a: true, e: "זהו הרעיון המרכזי — לייצר 'תוויות' מהמבנה של הנתונים, בלי תיוג אנושי." },
+  { q: "ב-Transfer Learning משמרים את שכבות הייצוג ומאמנים מחדש בעיקר את שכבת הסיווג.", a: true, e: "כך חוסכים דטה — הייצוג כבר נלמד, ורק המסווג מותאם למשימה החדשה." },
+  { q: "אילוץ ה-Bottleneck ב-Autoencoder מכריח את המודל לשמור רק מידע חיוני.", a: true, e: "מימד קטן מהקלט מונע לימוד פונקציית הזהות ומאלץ דחיסה ותמצות." },
+  { q: "אם מרחב הקידוד של Autoencoder שווה בגודלו לקלט, המודל בהכרח לומד ייצוג שימושי.", a: false, e: "בלי Bottleneck המודל עלול ללמוד את פונקציית הזהות (העתקה) ולא ללמוד דבר על מבנה הנתונים." },
+  { q: "Denoising Autoencoder מקבל קלט עם רעש ומתאמן לשחזר את הקלט הנקי.", a: true, e: "הרעש המשתנה מונע שינון ומאלץ את המודל להבין את מהות הנתונים." },
+  { q: "VAE ממפה כל קלט לנקודה בודדת בקוד הלטנטי.", a: false, e: "VAE ממפה להתפלגות ($\\mu,\\sigma$) ודוגם $z=\\mu+\\sigma\\odot\\varepsilon$ — לא נקודה בודדת." },
+  { q: "במודלי Diffusion, התהליך הקדמי מוסיף רעש לתמונה בהדרגה.", a: true, e: "Forward process: $q(x^{t+1}|x^t)$ מוסיף רעש גאוסי בכל צעד עד לרעש טהור." },
+  { q: "בסוף התהליך הקדמי של Diffusion, ההתפלגות שואפת לרעש גאוסי טהור $\\mathcal N(0,I)$.", a: true, e: "$\\bar\\alpha_T\\to0$ ⟹ $q(x^T|x^0)\\to\\mathcal N(0,I)$ — זו נקודת הפתיחה ליצירה." },
+  { q: "הרשת ב-Diffusion מאומנת לחזות את התמונה הנקייה ישירות בכל שלב.", a: false, e: "היא מאומנת לחזות את ה<b>רעש</b> $\\varepsilon$ שנוסף; אם יודעים אותו — מסירים אותו ומתקרבים לתמונה." },
+  { q: "בדגימה (יצירה) ב-Diffusion, מתחילים מרעש טהור ומסירים רעש צעד-צעד.", a: true, e: "$x_T\\sim\\mathcal N(0,I)$, ואז מריצים את התהליך ההפוך עד $x_0$." },
+  { q: "Diffusion היא שיטת למידה מונחית שדורשת תוויות אנושיות.", a: false, e: "זו למידה לא-מונחית — 'התווית' היא הרעש הידוע שהוספנו, לא תיוג אנושי." },
+  { q: "Autoencoder מסוגל למדל קשרים לא-לינאריים, בניגוד ל-PCA שהוא לינארי.", a: true, e: "AE עם אקטיבציות לא-לינאריות לומד פונקציות מורכבות; PCA מוגבל ללינארי." },
+  { q: "Convolutional Autoencoder יעיל במיוחד לתמונות כי הוא משמר קשרים מקומיים.", a: true, e: "שכבות קונבולוציה תופסות היררכיות מרחביות — יעיל יותר מ-MLP על תמונות." }
+]);
+</script>
+</body>
+</html>

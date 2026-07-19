@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>יסודות מתמטיים · ML Study Hub</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links">
+      <a href="../index.html">בית</a>
+      <a href="../quiz.html" class="cta">🎲 חידון</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap content">
+  <div class="topic-head">
+    <div class="eyebrow">נושא 01 · הרצאה 1</div>
+    <h1>🧮 יסודות מתמטיים</h1>
+    <p>הכלים המתמטיים שעליהם נשען כל הקורס: אלגברה לינארית (ערכים ווקטורים עצמיים, מטריצות PSD), הסתברות רב-ממדית (שונות משותפת, גאוסיאנים), וחשבון דיפרנציאלי (גרדיאנט, הסיאן, קמירות).</p>
+  </div>
+
+  <div class="goals">
+    <h2>🎯 מטרות הנושא</h2>
+    <ul>
+      <li>להבין ערכים ווקטורים עצמיים ומדוע וקטורים עצמיים של מטריצה סימטרית אורתוגונליים.</li>
+      <li>לזהות מטריצות PSD/PD ולקשר בין חיוביות המטריצה לערכיה העצמיים.</li>
+      <li>לשלוט בגאוסיאן הרב-ממדי ובמקרים הפרטיים ($\Sigma=I$, $\Sigma$ אלכסונית).</li>
+      <li>לחשב גרדיאנט, להוכיח את משפט הנגזרת הכיוונית, ולהבין את מטריצת ההסיאן והקמירות.</li>
+    </ul>
+  </div>
+
+  <!-- ============ Eigenvalues ============ -->
+  <section class="block reveal">
+    <h2>1. ערכים ווקטורים עצמיים <span class="tag">אלגברה לינארית</span></h2>
+
+    <div class="def">
+      <span class="lbl">הגדרה — וקטור עצמי</span><br>
+      תהי $A \in \mathbb{R}^{d\times d}$. וקטור $v\neq 0$ המקיים $Av=\lambda v$ נקרא <b>וקטור עצמי</b>, והסקלר $\lambda$ נקרא <b>ערך עצמי</b>. אינטואיטיבית: הפעלת $A$ על $v$ רק <b>מותחת</b> אותו פי $\lambda$ מבלי לשנות כיוון. תמיד ננרמל את הוקטורים העצמיים כך ש-$\|v\|=1$.
+    </div>
+
+    <div class="thm">
+      <span class="lbl">משפט</span><br>
+      אם $A\in\mathbb{R}^{d\times d}$ <b>סימטרית</b> ($A=A^T$) אזי: (א) כל ערכיה העצמיים <b>ממשיים</b>; (ב) היא לכסינה; (ג) קיים לה <b>בסיס אורתונורמלי</b> של וקטורים עצמיים.
+    </div>
+
+    <div class="thm">
+      <span class="lbl">משפט — אורתוגונליות</span><br>
+      תהי $A$ סימטרית, ו-$v_1,v_2$ וקטורים עצמיים לערכים עצמיים <b>שונים</b> $\lambda_1\neq\lambda_2$. אזי $v_1\perp v_2$.
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה</span><br>
+      נשתמש ב-$Av_1=\lambda_1 v_1$, $Av_2=\lambda_2 v_2$ ובכך ש-$A=A^T$:
+      $$\lambda_2\, v_1^T v_2 = v_1^T(\lambda_2 v_2) = v_1^T A v_2 = (A v_1)^T v_2 = (\lambda_1 v_1)^T v_2 = \lambda_1\, v_1^T v_2.$$
+      לכן $(\lambda_1-\lambda_2)\,v_1^T v_2 = 0$. כיוון ש-$\lambda_1\neq\lambda_2$ נובע $v_1^T v_2 = 0$, כלומר הוקטורים אורתוגונליים.
+    </div>
+
+    <div class="run">
+      <div class="step"><b>נתון:</b> $A=\begin{pmatrix}2&1\\1&2\end{pmatrix}$ (סימטרית). נמצא ערכים ווקטורים עצמיים.</div>
+      <div class="step"><b>שלב 1 — פולינום אופייני:</b> $\det(A-\lambda I)=(2-\lambda)^2-1=\lambda^2-4\lambda+3=(\lambda-1)(\lambda-3)$. לכן $\lambda_1=1,\ \lambda_2=3$ (ממשיים, כצפוי ממטריצה סימטרית).</div>
+      <div class="step"><b>שלב 2 — $\lambda_1=1$:</b> פותרים $(A-I)v=0$: $\begin{pmatrix}1&1\\1&1\end{pmatrix}v=0 \Rightarrow v_1 \propto (1,-1)$. אחרי נרמול: $v_1=\tfrac{1}{\sqrt2}(1,-1)$.</div>
+      <div class="step"><b>שלב 3 — $\lambda_2=3$:</b> $(A-3I)v=0$: $\begin{pmatrix}-1&1\\1&-1\end{pmatrix}v=0 \Rightarrow v_2\propto(1,1)$, מנורמל $v_2=\tfrac1{\sqrt2}(1,1)$.</div>
+      <div class="step"><b>בדיקת אורתוגונליות:</b> $v_1^T v_2 = \tfrac12(1\cdot1 + (-1)\cdot1)=\tfrac12(1-1)=0$ ✓ — בדיוק כפי שהמשפט מבטיח.</div>
+    </div>
+  </section>
+
+  <!-- ============ PSD ============ -->
+  <section class="block reveal">
+    <h2>2. מטריצות PSD ו-PD <span class="tag">חיוביות</span></h2>
+    <div class="def">
+      <span class="lbl">הגדרה</span><br>
+      תהי $A\in\mathbb{R}^{d\times d}$.
+      <ul>
+        <li>$A$ היא <b>PSD</b> (חצי-מוגדרת חיובית) אם $z^T A z \ge 0$ לכל $z\neq 0$.</li>
+        <li>$A$ היא <b>PD</b> (מוגדרת חיובית) אם $z^T A z > 0$ לכל $z\neq 0$.</li>
+      </ul>
+    </div>
+
+    <div class="thm">
+      <span class="lbl">משפט</span><br>
+      תהי $A$ סימטרית. אזי כל ערכיה העצמיים אי-שליליים $\iff$ $A$ היא PSD (וחיוביים ממש $\iff$ PD).
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה</span><br>
+      <b>($\Leftarrow$)</b> יהי $\lambda$ ערך עצמי עם וקטור עצמי מנורמל $v$ ($\|v\|=1$). אז
+      $$0 \le v^T A v = v^T(\lambda v)=\lambda\|v\|^2=\lambda.$$
+      לכן כל ערך עצמי אי-שלילי.<br>
+      <b>($\Rightarrow$)</b> $A$ סימטרית, אז יש בסיס אורתונורמלי $\{v_i\}$ עם ערכים עצמיים $\lambda_i\ge0$. כל $z$ נכתב $z=\sum_i c_i v_i$, ומכיוון ש-$v_i^Tv_j=\delta_{ij}$:
+      $$z^T A z = \Big(\sum_i c_i v_i\Big)^T\Big(\sum_j c_j\lambda_j v_j\Big)=\sum_i c_i^2\lambda_i \ge 0.$$
+    </div>
+
+    <div class="thm">
+      <span class="lbl">משפט (שימושי ל-Ridge)</span><br>
+      לכל מטריצה $X$ ולכל $\lambda>0$, המטריצה $X^TX+\lambda I$ הפיכה.
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה</span><br>
+      ערכי $X^TX$ אי-שליליים: אם $a$ ערך עצמי עם וקטור $v$, אז $a=\dfrac{\|Xv\|^2}{\langle v,v\rangle}\ge0$. לכן ל-$X^TX+\lambda I$ ערך עצמי $a+\lambda \ge \lambda >0$ — כל הערכים העצמיים חיוביים ממש, ולכן המטריצה הפיכה.
+    </div>
+
+    <div class="run">
+      <div class="step"><b>נתון:</b> $A=\begin{pmatrix}2&1\\1&2\end{pmatrix}$. האם PD?</div>
+      <div class="step"><b>שיטה 1 (ערכים עצמיים):</b> חישבנו $\lambda=1,3>0 \Rightarrow$ PD. ✓</div>
+      <div class="step"><b>שיטה 2 (ישירה):</b> $z^TAz = 2z_1^2+2z_1z_2+2z_2^2 = z_1^2+z_2^2+(z_1+z_2)^2 > 0$ לכל $z\neq0$. ✓</div>
+    </div>
+
+    <div class="note">
+      <span class="lbl">מטריצה אורתוגונלית</span><br>
+      $A$ אורתוגונלית אם $A^TA=AA^T=I$. שורותיה/עמודותיה אורתונורמליות, וערכיה העצמיים $\pm1$. הכפלה בה משמרת אורך וזווית (סיבוב/שיקוף).
+    </div>
+  </section>
+
+  <!-- ============ Covariance & Gaussian ============ -->
+  <section class="block reveal">
+    <h2>3. שונות משותפת וגאוסיאן רב-ממדי <span class="tag">הסתברות</span></h2>
+
+    <div class="def">
+      <span class="lbl">שונות משותפת (Covariance)</span><br>
+      $$\mathrm{Cov}(X,Y)=\mathbb{E}[(X-\mathbb{E}X)(Y-\mathbb{E}Y)]=\mathbb{E}[XY]-\mathbb{E}[X]\mathbb{E}[Y].$$
+      חיובי ⟵ קשר עולה; שלילי ⟵ קשר יורד; אפס ⟵ אין קשר לינארי. עבור וקטור אקראי $X\in\mathbb{R}^d$:
+      $$\Sigma=\mathrm{Cov}(X)=\mathbb{E}[(X-\mu)(X-\mu)^T],\qquad \Sigma_{ij}=\mathrm{Cov}(X_i,X_j).$$
+    </div>
+
+    <div class="thm">
+      <span class="lbl">משפט</span><br>
+      מטריצת השונות המשותפת $\Sigma$ תמיד <b>PSD</b>.
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה</span><br>
+      לכל $z$ קבוע,
+      $$z^T\Sigma z = z^T\,\mathbb{E}[(X-\mu)(X-\mu)^T]\,z = \mathbb{E}\big[z^T(X-\mu)(X-\mu)^T z\big] = \mathbb{E}\big[(z^T(X-\mu))^2\big] \ge 0,$$
+      כי תוחלת של ביטוי בריבוע (אי-שלילי) היא אי-שלילית.
+    </div>
+
+    <h3>הגאוסיאן הרב-ממדי</h3>
+    <p>עבור $X\sim\mathcal{N}(\mu,\Sigma)$ בעל $d$ ממדים:</p>
+    $$f(x)=\frac{1}{(2\pi)^{d/2}\sqrt{\det\Sigma}}\exp\!\Big(-\tfrac12 (x-\mu)^T\Sigma^{-1}(x-\mu)\Big).$$
+    <p>הביטוי $(x-\mu)^T\Sigma^{-1}(x-\mu)$ נקרא <b>מרחק מהלנוביס</b>. שני מקרים פרטיים חשובים:</p>
+    <ul>
+      <li><b>$\Sigma=I$:</b> הצפיפות תלויה רק במרחק האוקלידי מהמרכז — קווי השווה-הסתברות הם <b>כדורים</b> סימטריים.</li>
+      <li><b>$\Sigma$ אלכסונית:</b> הצפיפות מתפרקת למכפלת גאוסיאנים חד-ממדיים $\prod_i \tfrac{1}{\sqrt{2\pi\sigma_i^2}}\exp(-\tfrac{(x_i-\mu_i)^2}{2\sigma_i^2})$ — קווי שווה-הסתברות הם <b>אליפסות</b> מיושרות לצירים.</li>
+    </ul>
+    <div class="note">
+      <span class="lbl">עובדות שימושיות</span><br>
+      כל התניה/שוליים של גאוסיאן היא גאוסיאן; אם $\Sigma$ אלכסונית אזי הרכיבים בלתי-תלויים; וכל טרנספורמציה לינארית של גאוסיאן היא גאוסיאן.
+    </div>
+
+    <div class="run">
+      <div class="step"><b>נתון:</b> שתי דגימות דו-ממדיות $x_1=(2,10),\ x_2=(8,20)$. נחשב ממוצע ושונות משותפת אמפירית.</div>
+      <div class="step"><b>שלב 1 — ממוצע:</b> $\mu_1=\tfrac{2+8}{2}=5$, $\mu_2=\tfrac{10+20}{2}=15 \Rightarrow \mu=(5,15)$.</div>
+      <div class="step"><b>שלב 2 — סטיות ממוצע:</b> $x_1-\mu=(-3,-5)$, $x_2-\mu=(3,5)$.</div>
+      <div class="step"><b>שלב 3 — שונויות:</b> $\mathrm{Var}(X_1)=\tfrac{(-3)^2+3^2}{2}=9$, $\mathrm{Var}(X_2)=\tfrac{(-5)^2+5^2}{2}=25$.</div>
+      <div class="step"><b>שלב 4 — שונות משותפת:</b> $\mathrm{Cov}(X_1,X_2)=\tfrac{(-3)(-5)+(3)(5)}{2}=15$. מטריצה: $\Sigma=\begin{pmatrix}9&15\\15&25\end{pmatrix}$ — סימטרית ו-PSD.</div>
+    </div>
+  </section>
+
+  <!-- ============ Gradient ============ -->
+  <section class="block reveal">
+    <h2>4. גרדיאנט, הסיאן וקמירות <span class="tag">חשבון דיפרנציאלי</span></h2>
+    <div class="def">
+      <span class="lbl">גרדיאנט</span><br>
+      $\nabla f(x)=\big(\tfrac{\partial f}{\partial x_1},\dots,\tfrac{\partial f}{\partial x_d}\big)$. הוא מצביע על כיוון העלייה החדה ביותר של $f$.
+    </div>
+
+    <div class="thm">
+      <span class="lbl">משפט — הנגזרת הכיוונית מקסימלית בכיוון הגרדיאנט</span><br>
+      קצב השינוי של $f$ בנקודה $x$ בכיוון וקטור-יחידה $u$ הוא מקסימלי כאשר $u$ בכיוון $\nabla f(x)$.
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה</span><br>
+      קירוב מסדר ראשון: $f(x+hu)\approx f(x)+\nabla f(x)\cdot(hu)+\varepsilon(h)$. לכן
+      $$D_u f(x)=\lim_{h\to0}\frac{f(x+hu)-f(x)}{h}=\nabla f(x)\cdot u.$$
+      מא״ש קושי-שוורץ $\nabla f(x)\cdot u \le \|\nabla f(x)\|\cdot\|u\| = \|\nabla f(x)\|$ (כי $\|u\|=1$), עם שוויון כאשר $u$ מקביל ל-$\nabla f(x)$. לכן העלייה החדה ביותר בכיוון הגרדיאנט.
+    </div>
+
+    <div class="thm">
+      <span class="lbl">משפט — גרדיאנטים שימושיים</span><br>
+      (א) $\nabla (x^Tx)=2x$. (ב) עבור $A$ סימטרית, $\nabla(\tfrac12 x^TAx)=Ax$, וההסיאן $\nabla^2(\tfrac12 x^TAx)=A$.
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה של (א)</span><br>
+      $x^Tx=\sum_j x_j^2$, ולכן $\tfrac{\partial}{\partial x_i}\sum_j x_j^2 = 2x_i$, כלומר $\nabla(x^Tx)=2x$.
+    </div>
+
+    <div class="def">
+      <span class="lbl">הסיאן וקמירות</span><br>
+      מטריצת ההסיאן היא מטריצת הנגזרות מסדר שני $H_f=\nabla^2 f$. פונקציה גזירה פעמיים בתחום קמור היא <b>קמורה</b> $\iff$ $H_f(x)$ היא PSD בכל נקודה. בפונקציה קמורה כל מינימום מקומי הוא גלובלי — ולכן אנו מעדיפים פונקציות הפסד קמורות.
+    </div>
+
+    <div class="run">
+      <div class="step"><b>נתון:</b> $f(w)=\tfrac12\|Xw-y\|^2$ (הפסד ריבועי), $X=\begin{pmatrix}1&1\end{pmatrix}$, $y=3$, $w=(w_1,w_2)$.</div>
+      <div class="step"><b>גרדיאנט:</b> $\nabla f = X^T(Xw-y) = \begin{pmatrix}1\\1\end{pmatrix}(w_1+w_2-3)$.</div>
+      <div class="step"><b>הסיאן:</b> $H = X^TX = \begin{pmatrix}1&1\\1&1\end{pmatrix}$. ערכים עצמיים $0,2\ge0 \Rightarrow$ PSD $\Rightarrow$ הפונקציה קמורה. לכן כל נקודה שבה $\nabla f=0$ (כל $w$ עם $w_1+w_2=3$) היא מינימום גלובלי.</div>
+    </div>
+  </section>
+
+  <!-- ============ Quiz ============ -->
+  <div id="tf" class="tf-quiz reveal"></div>
+
+  <div class="topic-nav">
+    <a class="btn" href="../index.html">→ חזרה לכל הנושאים</a>
+    <a class="btn primary" href="supervised.html">הנושא הבא: למידה מונחית ←</a>
+  </div>
+</main>
+
+<footer><div class="wrap">ML Study Hub · נושא 1 מתוך 14</div></footer>
+
+<script src="../js/site.js"></script>
+<script>
+TFQuiz.render('#tf', [
+  { q: "אם $\\lambda_1\\neq\\lambda_2$ הם ערכים עצמיים של מטריצה סימטרית, אזי הוקטורים העצמיים המתאימים בהכרח אורתוגונליים.", a: true, e: "זו בדיוק תוצאת המשפט: עבור מטריצה סימטרית, וקטורים עצמיים לערכים עצמיים שונים מאונכים זה לזה." },
+  { q: "כל מטריצה ריבועית ממשית ניתנת ללכסון אורתוגונלי.", a: false, e: "רק מטריצות סימטריות מובטח שיהיה להן בסיס אורתונורמלי של וקטורים עצמיים. מטריצה כללית לא בהכרח לכסינה, ובוודאי לא אורתוגונלית." },
+  { q: "מטריצה $A$ היא PSD אם ורק אם כל ערכיה העצמיים אי-שליליים — כאשר $A$ סימטרית.", a: true, e: "המשפט מתקיים למטריצות סימטריות: $z^TAz\\ge0$ לכל $z$ שקול לכך שכל הערכים העצמיים $\\ge0$." },
+  { q: "לכל מטריצה $X$ ולכל $\\lambda>0$, המטריצה $X^TX+\\lambda I$ עלולה להיות סינגולרית (לא הפיכה).", a: false, e: "היא תמיד הפיכה: ערכי $X^TX$ אי-שליליים, ולכן ערכי $X^TX+\\lambda I$ הם $\\ge\\lambda>0$ — כולם חיוביים ממש, מה שמבטיח הפיכות." },
+  { q: "מטריצת השונות המשותפת $\\Sigma$ יכולה להיות אנטי-סימטרית (לא סימטרית).", a: false, e: "$\\mathrm{Cov}(X_i,X_j)=\\mathrm{Cov}(X_j,X_i)$, לכן $\\Sigma$ תמיד סימטרית (וגם PSD)." },
+  { q: "אם מטריצת השונות המשותפת אלכסונית, אז רכיבי הוקטור האקראי בלתי-תלויים (בהינתן גאוסיאניות).", a: true, e: "עבור גאוסיאן, $\\Sigma$ אלכסונית ⟺ שונות משותפת אפס בין רכיבים שונים ⟺ אי-תלות (הצפיפות מתפרקת למכפלה)." },
+  { q: "בגאוסיאן רב-ממדי עם $\\Sigma=I$, קווי השווה-הסתברות הם אליפסות מוארכות.", a: false, e: "כאשר $\\Sigma=I$ הצפיפות תלויה רק במרחק האוקלידי מהמרכז, ולכן קווי השווה-הסתברות הם כדורים/מעגלים סימטריים, לא אליפסות." },
+  { q: "הגרדיאנט $\\nabla f(x)$ מצביע לכיוון שבו הפונקציה $f$ יורדת הכי מהר.", a: false, e: "הגרדיאנט מצביע לכיוון ה<b>עלייה</b> החדה ביותר. הכיוון ההפוך, $-\\nabla f$, הוא כיוון הירידה החדה ביותר — ולכן ב-Gradient Descent צועדים נגד הגרדיאנט." },
+  { q: "מא\"ש קושי-שוורץ נובע שהנגזרת הכיוונית $D_uf=\\nabla f\\cdot u$ מקסימלית כאשר $u$ מקביל לגרדיאנט.", a: true, e: "$\\nabla f\\cdot u\\le\\|\\nabla f\\|\\|u\\|$ עם שוויון בדיוק כאשר $u$ בכיוון הגרדיאנט (וקטור יחידה)." },
+  { q: "עבור $f(x)=x^Tx$ מתקיים $\\nabla f = x$.", a: false, e: "הנגזרת היא $\\nabla(x^Tx)=2x$ ולא $x$, כי כל רכיב תורם $\\partial(\\sum x_j^2)/\\partial x_i = 2x_i$." },
+  { q: "פונקציה גזירה פעמיים היא קמורה אם ורק אם ההסיאן שלה PSD בכל נקודה בתחום (קמור).", a: true, e: "זהו התנאי המדויק לקמירות: $H_f\\succeq0$ בכל נקודה. זו הסיבה שאנו אוהבים פונקציות הפסד שהן ריבועיות/קמורות." },
+  { q: "בפונקציה קמורה, ייתכן מינימום מקומי שאינו מינימום גלובלי.", a: false, e: "היתרון המרכזי של קמירות: כל מינימום מקומי הוא בהכרח גלובלי — אין 'בורות' מקומיים שנתקעים בהם." },
+  { q: "הכפלת וקטור במטריצה אורתוגונלית משמרת את אורכו.", a: true, e: "מטריצה אורתוגונלית מקיימת $A^TA=I$, ולכן $\\|Av\\|^2=(Av)^T(Av)=v^TA^TAv=v^Tv=\\|v\\|^2$ — האורך נשמר (סיבוב/שיקוף)." },
+  { q: "אם $A$ סימטרית, ערך עצמי שלה יכול להיות מספר מרוכב (לא ממשי).", a: false, e: "משפט: כל הערכים העצמיים של מטריצה סימטרית ממשית הם ממשיים." },
+  { q: "מרחק מהלנוביס $(x-\\mu)^T\\Sigma^{-1}(x-\\mu)$ מתחשב במבנה השונות המשותפת, בניגוד למרחק אוקלידי רגיל.", a: true, e: "$\\Sigma^{-1}$ 'מנרמל' את הכיוונים לפי השונות שלהם, כך שכיוונים עם שונות גבוהה נמתחים פחות — זה בדיוק ההבדל ממרחק אוקלידי." }
+]);
+</script>
+</body>
+</html>

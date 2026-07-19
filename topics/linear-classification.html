@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>סיווג לינארי · ML Study Hub</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links"><a href="../index.html">בית</a><a href="../quiz.html" class="cta">🎲 חידון</a></nav>
+  </div>
+</header>
+
+<main class="wrap content">
+  <div class="topic-head">
+    <div class="eyebrow">נושא 05 · הרצאות 4–5</div>
+    <h1>➗ סיווג לינארי</h1>
+    <p>הניורון הלינארי, אלגוריתם הפרספטרון, אימון עם Gradient Descent ו-SGD, פונקציית ה-Hinge, וההכללה למספר מחלקות באמצעות Softmax ו-Cross-Entropy.</p>
+  </div>
+
+  <div class="goals">
+    <h2>🎯 מטרות הנושא</h2>
+    <ul>
+      <li>להבין את הניורון הלינארי ואת אלגוריתם הפרספטרון ומדוע הוא מתכנס על נתונים פרידים לינארית.</li>
+      <li>להבין את הטרייד-אוף בין GD ל-SGD ומדוע רעש עוזר לאופטימיזציה.</li>
+      <li>לאמן ניורון בודד עם Hinge Loss ו-SGD.</li>
+      <li>להכליל למספר מחלקות עם Softmax ולגזור את כלל העדכון של Cross-Entropy.</li>
+    </ul>
+  </div>
+
+  <section class="block reveal">
+    <h2>1. הפרספטרון <span class="tag">אלגוריתם</span></h2>
+    <p>ניורון סף-לינארי: $h_{w}(x)=\mathrm{sign}(w^Tx)$ (בולעים את הסף לתוך $w$). מסווג נכון כאשר ה-Margin $y_i(w^Tx_i)>0$.</p>
+    <pre class="code"><span class="cm"># Perceptron</span>
+<span class="kw">init</span> w randomly
+<span class="kw">while</span> not all correct:
+  <span class="kw">for</span> i = 1..n:
+    ŷ = sign(wᵀxᵢ)
+    <span class="kw">if</span> yᵢ ≠ ŷ:
+      w ← w + yᵢ·xᵢ   <span class="cm"># push toward the misclassified point</span></pre>
+    <div class="note">
+      <span class="lbl">מדוע זה עובד?</span><br>
+      $w^Tx=\|w\|\|x\|\cos\theta$. אם טעינו בדגימה חיובית ($y=1$) ומעדכנים $w\leftarrow w+x$:
+      $$w_{new}^Tx=(w+x)^Tx=w^Tx+\|x\|^2 > w^Tx,$$
+      כלומר תמיד מגדילים את המכפלה (מקטינים את הזווית) — הוקטור מסתובב לכיוון הנקודה. אם הנתונים פרידים לינארית, האלגוריתם מובטח להתכנס. על XOR (לא פריד לינארית) — לא יתכנס.
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> $w=(0,0)$, דגימה $x=(2,1)$, $y=+1$. חזוי $\mathrm{sign}(0)=$ טעות.</div>
+      <div class="step"><b>עדכון:</b> $w\leftarrow w+yx=(0,0)+(2,1)=(2,1)$.</div>
+      <div class="step"><b>בדיקה:</b> כעת $w^Tx=2\cdot2+1\cdot1=5>0 \Rightarrow$ מסווג נכון. ✓</div>
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>2. GD, SGD והטרייד-אוף <span class="tag">אופטימיזציה</span></h2>
+    <p><b>GD:</b> מחשב גרדיאנט על כל הנתונים בכל צעד — מסלול יציב אך איטי וכבד בזיכרון. <b>SGD:</b> מקרב את הגרדיאנט מ-mini-batch קטן — צעדים מהירים עם רעש.</p>
+    <div class="thm">
+      <span class="lbl">התכנסות GD (משפט)</span><br>
+      לפונקציה קמורה עם גרדיאנט $\beta$-ליפשיץ, GD עם צעד $\eta\le\tfrac1\beta$ מקיים
+      $$f(x^T)-f(x^\star)\le \frac{\|x^0-x^\star\|^2}{2\eta T}=O\!\left(\tfrac1T\right).$$
+    </div>
+    <div class="note">
+      <span class="lbl">מדוע רעש טוב?</span><br>
+      ב-SGD הרעש בגרדיאנט מאפשר "לקפוץ" מבורות מקומיים ונקודות אוכף — משל הכדור שרועד בדרך במורד ההר ומצליח לצאת ממלכודות. הפתרון לבעיית אי-ההתכנסות: <b>Learning Rate Decay</b>, למשל $\eta_t=\eta_0/t$.</div>
+    <table>
+      <tr><th></th><th>Batch = n (GD)</th><th>Batch = 1</th><th>Mini-batch</th></tr>
+      <tr><td>מסלול</td><td>יציב וחלק</td><td>זיגזג פרוע</td><td>יציב מספיק</td></tr>
+      <tr><td>מהירות</td><td>איטי</td><td>מהיר</td><td>מהיר + מקבילי</td></tr>
+      <tr><td>זיכרון</td><td>עלול לקרוס</td><td>מינימלי</td><td>נכנס ל-GPU</td></tr>
+    </table>
+  </section>
+
+  <section class="block reveal">
+    <h2>3. Hinge Loss ואימון ניורון בודד <span class="tag">SGD</span></h2>
+    <p>הפסד 0-1 אינו גזיר (נגזרת אפס בכל מקום). במקום זאת ה-Hinge:</p>
+    $$\ell_{\text{hinge}}(w;x,y)=\max(0,\,-y\,w^Tx),\qquad \nabla\ell=\begin{cases}-yx & yw^Tx<0\\ 0 & yw^Tx>0\end{cases}.$$
+    <div class="note">
+      <span class="lbl">האלגוריתם</span><br>
+      דגום $(x_i,y_i)$; אם הסיווג נכון — אל תעשה כלום; אחרת $w\leftarrow w+\eta y_i x_i$. הפרספטרון הוא בדיוק המקרה $\eta=1$!
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>4. Softmax ו-Cross-Entropy <span class="tag">רב-מחלקתי</span></h2>
+    <p>עבור $K>2$ מחלקות, כל מחלקה מקבלת וקטור משקולות $w_k$, וממירים ציונים להסתברויות:</p>
+    $$P(y=i|x)=\frac{\exp(w_i^Tx)}{\sum_{j=1}^K \exp(w_j^Tx)}.$$
+    <div class="note">
+      <span class="lbl">יציבות מספרית</span><br>
+      מחסירים את הציון המקסימלי $c=\max_j w_j^Tx$ מכל הציונים לפני האקספוננט — התוצאה זהה (מתקצר) אך נמנעים מ-overflow.
+    </div>
+    <div class="thm">
+      <span class="lbl">גרדיאנט Cross-Entropy</span><br>
+      $\nabla_{w_c}L = (p_c - \mathbf{1}_{y=c})\,x_i$, כלומר <b>הסתברות חזויה פחות היעד</b>, כפול הקלט — לכל מחלקה $c$.
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> ציונים גולמיים $z=(2.0, 1.0, 0.1)$ עבור 3 מחלקות. תווית אמת: מחלקה 1 (אינדקס 0).</div>
+      <div class="step"><b>שלב 1 — יציבות:</b> מחסירים $c=2.0$: $z'=(0,-1,-1.9)$.</div>
+      <div class="step"><b>שלב 2 — אקספוננטים:</b> $e^0=1,\ e^{-1}=0.368,\ e^{-1.9}=0.150$. סכום $=1.518$.</div>
+      <div class="step"><b>שלב 3 — הסתברויות:</b> $p=(0.659, 0.242, 0.099)$.</div>
+      <div class="step"><b>שלב 4 — גרדיאנט למחלקה 1:</b> $(p_1 - 1)=0.659-1=-0.341$; לשאר: $+0.242, +0.099$. מכפילים ב-$x_i$ ומעדכנים $w_c \leftarrow w_c - \eta(p_c-\text{target})x_i$.</div>
+      <div class="step"><b>הפסד:</b> $L=-\ln(p_1)=-\ln(0.659)=0.417$ — נמדד למעקב אחר התקדמות.</div>
+    </div>
+  </section>
+
+  <div id="tf" class="tf-quiz reveal"></div>
+
+  <div class="topic-nav">
+    <a class="btn" href="regression.html">→ הקודם: רגרסיה</a>
+    <a class="btn primary" href="svm.html">הבא: SVM ו-Kernels ←</a>
+  </div>
+</main>
+
+<footer><div class="wrap">ML Study Hub · נושא 5 מתוך 14</div></footer>
+
+<script src="../js/site.js"></script>
+<script>
+TFQuiz.render('#tf', [
+  { q: "אלגוריתם הפרספטרון מובטח להתכנס גם על נתונים שאינם פרידים לינארית.", a: false, e: "הפרספטרון מתכנס רק כאשר הנתונים פרידים לינארית. על XOR, למשל, הוא לעולם לא יתכנס." },
+  { q: "בעדכון הפרספטרון, הוספת $y_ix_i$ ל-$w$ מגדילה את המכפלה $w^Tx_i$ בכיוון הנכון.", a: true, e: "$w_{new}^Tx=w^Tx+\\|x\\|^2$, כלומר תמיד מקטין את הזווית ומזיז את הגבול לכיוון הנקודה." },
+  { q: "הפרספטרון הוא מקרה פרטי של אימון ניורון עם Hinge Loss ו-$\\eta=1$.", a: true, e: "כלל העדכון $w\\leftarrow w+\\eta y x$ עם $\\eta=1$ הוא בדיוק עדכון הפרספטרון." },
+  { q: "ב-GD צעד יחיד דורש מעבר על כל הנתונים, בעוד ב-SGD צעד מבוסס על תת-קבוצה קטנה.", a: true, e: "זהו ההבדל המרכזי — SGD מקרב את הגרדיאנט מ-mini-batch, ולכן מהיר בהרבה." },
+  { q: "הרעש ב-SGD תמיד מזיק ומונע התכנסות.", a: false, e: "הרעש דווקא עוזר לברוח מבורות מקומיים ונקודות אוכף. יותר מדי רעש (batch=1) פחות טוב, ולכן משתמשים ב-mini-batch." },
+  { q: "פונקציית הפסד 0-1 אינה שמישה עם Gradient Descent כי הנגזרת שלה אפס כמעט בכל מקום.", a: true, e: "הגרדיאנט אפס ⟹ אין כיוון להשתפר, ולכן משתמשים בקירוב גזיר כמו Hinge." },
+  { q: "ב-SGD, הקטנת קצב הלמידה לאורך הזמן (Learning Rate Decay) עוזרת להתכנסות.", a: true, e: "$\\eta_t=\\eta_0/t$ מכריח את הצעדים להצטמצם, כך שהאלגוריתם 'מתיישב' סביב המינימום במקום לקפץ." },
+  { q: "בחישוב Softmax, מחסירים קבוע מכל הציונים ⟹ ההסתברויות משתנות.", a: false, e: "חיסור קבוע מכל הציונים אינו משנה את הפלט (מתקצר במונה ובמכנה) — עושים זאת רק ליציבות מספרית." },
+  { q: "הגרדיאנט של Cross-Entropy הוא (הסתברות חזויה − יעד) כפול הקלט.", a: true, e: "$\\nabla_{w_c}L=(p_c-\\mathbf{1}_{y=c})x_i$ — ביטוי אלגנטי לכל מחלקה." },
+  { q: "ב-Softmax, כל מחלקה מקבלת וקטור משקולות נפרד משלה.", a: true, e: "מטריצת המשקולות $W$ מכילה עמודה לכל אחת מ-$K$ המחלקות." },
+  { q: "GD עבור פונקציה קמורה עם גרדיאנט ליפשיץ מתכנס בקצב $O(1/T)$.", a: true, e: "המשפט מבטיח $f(x^T)-f(x^\\star)\\le O(1/T)$ עם צעד קבוע מתאים." },
+  { q: "בגישת All-vs-1 (One-vs-All), הציונים של המסווגים השונים מנורמלים לאותה סקאלה.", a: false, e: "כל מסווג מתאמן בנפרד, ולכן הציונים אינם באותה סקאלה — זו בעיה מרכזית שהופכת את ההשוואה ביניהם בעייתית, בניגוד ל-Softmax." },
+  { q: "מודל Softmax יוצר גבולות החלטה לינאריים בין המחלקות.", a: true, e: "הגבול בין שתי מחלקות הוא $w_i^Tx=w_j^Tx$ — משוואת על-מישור לינארי." },
+  { q: "פונקציית Hinge מחזירה 0 כאשר הסיווג נכון וקנס חיובי כאשר טועים.", a: true, e: "$\\max(0,-yw^Tx)$: אפס כשה-margin חיובי, וגדל ככל שהטעות גדולה יותר." },
+  { q: "batch=1 ב-SGD מנצל היטב את הכוח המקבילי של ה-GPU.", a: false, e: "batch=1 לא מנצל טוב את ה-GPU (אין כפל מטריצות גדול). לכן mini-batch הוא האיזון הנכון — מהיר וגם מקבילי." }
+]);
+</script>
+</body>
+</html>

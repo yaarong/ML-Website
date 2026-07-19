@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>למידה מונחית ותורת ההחלטה · ML Study Hub</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links"><a href="../index.html">בית</a><a href="../quiz.html" class="cta">🎲 חידון</a></nav>
+  </div>
+</header>
+
+<main class="wrap content">
+  <div class="topic-head">
+    <div class="eyebrow">נושא 02 · הרצאה 2</div>
+    <h1>🎯 למידה מונחית ותורת ההחלטה</h1>
+    <p>המסגרת של Supervised Learning: מהי היפותזה, מהו הפסד, וכיצד מקבלים החלטות אופטימליות (Bayes). ננתח את הטרייד-אוף בין הטיה לשונות, את תופעת ה-Overfitting, ואת Cross-Validation.</p>
+  </div>
+
+  <div class="goals">
+    <h2>🎯 מטרות הנושא</h2>
+    <ul>
+      <li>להגדיר למידה מונחית: מרחב היפותזות, פונקציית הפסד ו-Expected Loss.</li>
+      <li>להבין את החלטת בייס האופטימלית: סיכון מותנה, Zero-One Loss ו-MAP.</li>
+      <li>להוכיח את פירוק ה-Bias-Variance של ה-MSE.</li>
+      <li>לזהות Over/Under-fitting ולהשתמש ב-Cross-Validation לבחירת פרמטרים.</li>
+    </ul>
+  </div>
+
+  <section class="block reveal">
+    <h2>1. מסגרת הלמידה המונחית <span class="tag">הגדרות</span></h2>
+    <p>נתוני אימון $S=\{(x_i,y_i)\}_{i=1}^n$ עם $x_i\in\mathcal X$ (קלט) ו-$y_i\in\mathcal Y$ (תווית), הנדגמים i.i.d מהתפלגות משותפת לא-ידועה $P(x,y)$. נחפש היפותזה $h:\mathcal X\to\mathcal Y$ ממרחב היפותזות $\mathcal H$.</p>
+    <div class="def">
+      <span class="lbl">Expected Loss (סיכון אמיתי)</span><br>
+      $$\mathrm{Err}_{\mathcal D}(h)=\mathbb{E}_{P(x,y)}[\ell(h(x),y)].$$
+      זהו הממוצע המשוקלל של הטעויות על <b>כל</b> העולם — לא רק על נתוני האימון. סוג פלט בדיד ⟵ סיווג; רציף ⟵ רגרסיה.
+    </div>
+    <p>מכיוון ש-$P(x,y)$ לא ידועה, אנו ממזערים במקום זאת את ה<b>סיכון האמפירי</b> $\mathrm{Err}_S(h)=\tfrac1n\sum_i \ell(h(x_i),y_i)$.</p>
+
+    <div class="thm">
+      <span class="lbl">משפט — הפתרון האופטימלי של מודל קבוע</span><br>
+      עבור מודל מדרגה 0 ($h_w(x)=w_0$) והפסד ריבועי, הפרמטר האופטימלי הוא הממוצע: $w_0^\star=\tfrac1n\sum_i y_i$.
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה</span><br>
+      $\mathrm{Err}(w_0)=\tfrac1n\sum_i(w_0-y_i)^2$. גוזרים ומשווים לאפס:
+      $$\frac{\partial}{\partial w_0}\tfrac1n\sum_i(w_0-y_i)^2 = \tfrac1n\sum_i 2(w_0-y_i)=0 \Rightarrow n w_0 = \sum_i y_i \Rightarrow w_0^\star=\tfrac1n\sum_i y_i.$$
+      (הפונקציה ריבועית וקמורה ב-$w_0$, ולכן זה מינימום גלובלי.)
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> $y=(4,6,8,10,12)$, מודל קבוע.</div>
+      <div class="step"><b>חישוב:</b> $w_0^\star = \tfrac{4+6+8+10+12}{5}=\tfrac{40}{5}=8$.</div>
+      <div class="step"><b>שגיאה:</b> $\mathrm{Err}=\tfrac15[(8-4)^2+(8-6)^2+0+(8-10)^2+(8-12)^2]=\tfrac{16+4+0+4+16}{5}=8$. אכן זהו המינימום.</div>
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>2. תורת ההחלטה של בייס <span class="tag">אופטימליות</span></h2>
+    <p>בהינתן ידע מלא על ההתפלגויות, מהי האסטרטגיה האופטימלית? נגדיר מצבי עולם $\omega_1,\dots,\omega_k$, פעולות $\alpha_1,\dots$ ועלויות $\lambda(\alpha_k|\omega_j)$.</p>
+    <div class="def">
+      <span class="lbl">חוק בייס</span><br>
+      $$\underbrace{P(\omega|x)}_{\text{Posterior}}=\frac{\overbrace{P(x|\omega)}^{\text{Likelihood}}\,\overbrace{P(\omega)}^{\text{Prior}}}{P(x)}.$$
+    </div>
+    <div class="def">
+      <span class="lbl">סיכון מותנה</span><br>
+      $$R(\alpha_k|x)=\sum_{j}\lambda(\alpha_k|\omega_j)\,P(\omega_j|x),\qquad \alpha^\star(x)=\arg\min_\alpha R(\alpha|x).$$
+    </div>
+    <div class="thm">
+      <span class="lbl">מסקנה — Zero-One Loss ⟹ MAP</span><br>
+      כאשר כל טעות עולה 1 וצדק עולה 0, $R(\alpha_k|x)=1-P(\omega_k|x)$, ולכן ההחלטה האופטימלית היא לבחור את המחלקה עם ה-<b>Posterior המקסימלי</b> (החלטת MAP).
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה</span><br>
+      עם $\lambda(\alpha_k|\omega_j)=1-\delta_{kj}$: $R(\alpha_k|x)=\sum_{j\neq k}P(\omega_j|x)=1-P(\omega_k|x)$. מזעור $1-P(\omega_k|x)$ שקול למקסום $P(\omega_k|x)$.
+    </div>
+
+    <h3>יחס נראות וגבול החלטה</h3>
+    <p>עבור שתי מחלקות, נבחר $\alpha_1$ אם:</p>
+    $$\underbrace{\frac{P(x|\omega_1)}{P(x|\omega_2)}}_{\text{Likelihood ratio}} > \underbrace{\frac{\lambda_{12}-\lambda_{22}}{\lambda_{21}-\lambda_{11}}\cdot\frac{P(\omega_2)}{P(\omega_1)}}_{\text{Decision boundary}}.$$
+    <div class="run">
+      <div class="step"><b>תרחיש:</b> Zero-One cost ($\lambda_{11}=\lambda_{22}=0,\ \lambda_{12}=\lambda_{21}=1$), פריורים $P(\omega_1)=0.3,\ P(\omega_2)=0.7$. סף ההחלטה: $\dfrac{\lambda_{12}}{\lambda_{21}}\cdot\dfrac{P(\omega_2)}{P(\omega_1)}=1\cdot\dfrac{0.7}{0.3}\approx 2.33$.</div>
+      <div class="step"><b>תצפית:</b> נתון $P(x|\omega_1)=0.6$, $P(x|\omega_2)=0.2$. יחס הנראות: $0.6/0.2=3$.</div>
+      <div class="step"><b>החלטה:</b> $3 > 2.33 \Rightarrow$ בוחרים $\alpha_1$ — למרות שהפריור של $\omega_1$ נמוך, הראיה חזקה מספיק כדי לעבור את הסף.</div>
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>3. פירוק Bias-Variance <span class="tag">משפט + הוכחה</span></h2>
+    <p>ההיפותזה תלויה בנתוני האימון: $h(x)=h(x;S_n)$. נבדוק את שגיאת החיזוי הצפויה על נקודה חדשה.</p>
+    <div class="thm">
+      <span class="lbl">משפט</span><br>
+      $$\mathrm{MSE}=\mathbb{E}_{(x,y)}[(y-h(x))^2] = \underbrace{\mathbb{E}[(y-\mathbb{E}_{S}h(x))^2]}_{\text{Bias}^2} + \underbrace{\mathbb{E}\,\mathbb{E}_{S}[(h(x)-\mathbb{E}_{S}h(x))^2]}_{\text{Variance}}.$$
+    </div>
+    <div class="proof">
+      <span class="lbl">הוכחה</span><br>
+      נסמן $\bar h=\mathbb{E}_S[h(x)]$ ונוסיף ונחסיר:
+      $$\mathbb{E}[(y-h)^2]=\mathbb{E}[(y-\bar h + \bar h - h)^2]=\mathbb{E}[(y-\bar h)^2]+\mathbb{E}[(\bar h-h)^2]+2\,\mathbb{E}[(y-\bar h)(\bar h - h)].$$
+      האיבר המעורב מתאפס: לוקחים תוחלת על $S$ תחילה, $(y-\bar h)$ אינו תלוי ב-$S$, ו-$\mathbb{E}_S[\bar h - h]=\bar h - \bar h=0$. נותרים שני האיברים — $\text{Bias}^2 + \text{Variance}$.
+    </div>
+    <div class="note">
+      <span class="lbl">הטרייד-אוף</span><br>
+      מודל <b>פשוט</b> ⟵ Bias גבוה, Variance נמוך (Underfitting). מודל <b>מורכב</b> ⟵ Bias נמוך, Variance גבוה (Overfitting). המטרה: לאזן ולמזער את הסכום.
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>4. Over/Under-fitting וצמצומם <span class="tag">מעשי</span></h2>
+    <ul>
+      <li><b>Underfitting:</b> שגיאה גבוהה גם באימון וגם בהערכה. מודל פשוט מדי (Bias גבוה). פתרון: להגדיל מורכבות.</li>
+      <li><b>Good Fit:</b> שגיאה נמוכה בשניהם — איזון Bias-Variance.</li>
+      <li><b>Overfitting:</b> שגיאת אימון נמוכה מאוד אך שגיאת הערכה גבוהה. המודל שינן את הרעש (Variance גבוה).</li>
+    </ul>
+    <h3>דרכים להפחית Overfitting</h3>
+    <ul>
+      <li><b>עוד נתונים:</b> הרעש מתקזז והמגמה האמיתית בולטת; המודל נאלץ 'להתיישר' לפי המגמה.</li>
+      <li><b>Regularization:</b> מוסיפים קנס על גודל המקדמים: $\mathrm{Err}(w)=\sum_i(h_w(x_i)-y_i)^2+\tfrac{\lambda}{2}\|w\|^2$. $\lambda$ גדול ⟵ מודל פשוט יותר; $\lambda$ קטן ⟵ פחות רגולריזציה.</li>
+    </ul>
+  </section>
+
+  <section class="block reveal">
+    <h2>5. Cross-Validation <span class="tag">בחירת פרמטרים</span></h2>
+    <p>לא ניתן להשתמש ב-Test כדי לבחור היפר-פרמטרים. במקום זאת (k-fold):</p>
+    <ol>
+      <li>מחלקים את הנתונים ל-$k$ קבוצות שוות.</li>
+      <li>בכל איטרציה $i$: מאמנים על $k-1$ קבוצות, מעריכים על הקבוצה ה-$i$.</li>
+      <li>ממצעים את $k$ השגיאות ומקבלים הערכת ביצועים יציבה.</li>
+      <li>בוחרים את ההיפר-פרמטרים עם ממוצע השגיאה הנמוך ביותר.</li>
+    </ol>
+    <div class="note">
+      <span class="lbl">השפעת $k$</span><br>
+      $k$ גדול ⟵ Bias נמוך יותר (סטי אימון גדולים יותר) אך Variance גבוה יותר (המדגמים כמעט חופפים והממוצע רגיש יותר). שוב — טרייד-אוף.
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> 100 דגימות, 5-fold. משווים פולינום דרגה 2 מול דרגה 9.</div>
+      <div class="step"><b>דרגה 2:</b> שגיאות ה-fold: $[0.21,0.19,0.24,0.20,0.22]$ ⟹ ממוצע $0.212$.</div>
+      <div class="step"><b>דרגה 9:</b> $[0.09,0.55,0.31,0.42,0.28]$ ⟹ ממוצע $0.33$ (שונות גבוהה — סימן ל-Overfitting).</div>
+      <div class="step"><b>מסקנה:</b> נבחר דרגה 2 — ממוצע נמוך ויציב יותר.</div>
+    </div>
+  </section>
+
+  <div id="tf" class="tf-quiz reveal"></div>
+
+  <div class="topic-nav">
+    <a class="btn" href="math.html">→ הקודם: יסודות מתמטיים</a>
+    <a class="btn primary" href="estimation.html">הבא: הערכת פרמטרים ו-PAC ←</a>
+  </div>
+</main>
+
+<footer><div class="wrap">ML Study Hub · נושא 2 מתוך 14</div></footer>
+
+<script src="../js/site.js"></script>
+<script>
+TFQuiz.render('#tf', [
+  { q: "המטרה בלמידה מונחית היא למזער את הסיכון האמפירי על נתוני האימון, כי הוא שווה תמיד לסיכון האמיתי.", a: false, e: "המטרה האמיתית היא למזער את הסיכון ה<b>אמיתי</b> (על כל העולם). אנו ממזערים את האמפירי רק כי לא ידועה $P(x,y)$ — והם לא שווים; מזעור-יתר של האמפירי מוביל ל-Overfitting." },
+  { q: "עבור מודל קבוע (דרגה 0) עם הפסד ריבועי, הפרמטר האופטימלי הוא הממוצע האריתמטי של התוויות.", a: true, e: "גזירה של $\\tfrac1n\\sum(w_0-y_i)^2$ נותנת $w_0^\\star=\\tfrac1n\\sum y_i$ — הממוצע." },
+  { q: "כאשר פונקציית העלות היא Zero-One, ההחלטה האופטימלית של בייס היא לבחור את המחלקה עם ה-Posterior המקסימלי.", a: true, e: "$R(\\alpha_k|x)=1-P(\\omega_k|x)$, ומזעורו שקול למקסום ה-Posterior — זו החלטת MAP." },
+  { q: "לפי חוק בייס, ה-Posterior פרופורציונלי למכפלת ה-Likelihood וה-Prior.", a: true, e: "$P(\\omega|x)\\propto P(x|\\omega)P(\\omega)$; המכנה $P(x)$ קבוע ואינו משפיע על ה-argmax." },
+  { q: "אם הפריור של מחלקה נמוך מאוד, אף פעם לא נבחר בה, בלי קשר ליחס הנראות.", a: false, e: "אם יחס הנראות חזק מספיק (עובר את סף ההחלטה) — נבחר בה למרות הפריור הנמוך, כפי שראינו בדוגמה המספרית ($3>2.33$)." },
+  { q: "ה-MSE מתפרק לסכום של $\\text{Bias}^2$ ו-Variance.", a: true, e: "זהו פירוק ה-Bias-Variance; ההוכחה מבוססת על הוספה/חיסור של $\\bar h=\\mathbb{E}_S[h]$ והתאפסות האיבר המעורב." },
+  { q: "בפירוק Bias-Variance, האיבר המעורב $2\\mathbb{E}[(y-\\bar h)(\\bar h - h)]$ אינו מתאפס בהכרח.", a: false, e: "הוא כן מתאפס: $\\mathbb{E}_S[\\bar h - h]=0$ כי $\\bar h$ הוא בדיוק התוחלת של $h$ על מדגמי האימון." },
+  { q: "מודל מורכב מדי נוטה ל-Bias גבוה ו-Variance נמוך.", a: false, e: "זה הפוך: מודל מורכב ⟵ Bias נמוך אך Variance גבוה (Overfitting). מודל פשוט ⟵ Bias גבוה, Variance נמוך (Underfitting)." },
+  { q: "Overfitting מאופיין בשגיאת אימון נמוכה מאוד אך שגיאת הערכה/מבחן גבוהה.", a: true, e: "המודל שינן את הרעש בנתוני האימון — מצוין עליהם, אך נכשל בהכללה לנתונים חדשים." },
+  { q: "הוספת רגולריזציה $\\tfrac{\\lambda}{2}\\|w\\|^2$ עם $\\lambda$ גדול מאוד תמיד משפרת את הדיוק.", a: false, e: "$\\lambda$ גדול מדי מפשט את המודל יתר על המידה ומוביל ל-Underfitting (Bias גבוה). צריך לאזן את $\\lambda$." },
+  { q: "מותר להשתמש בסט המבחן (Test) כדי לבחור את ההיפר-פרמטרים של המודל.", a: false, e: "אסור — זה 'לרמות את עצמנו'. לבחירת היפר-פרמטרים משתמשים ב-Validation או ב-Cross-Validation, וה-Test נשמר טהור להערכה סופית." },
+  { q: "ב-k-fold Cross-Validation, ככל ש-$k$ גדול יותר ה-Bias של ההערכה יורד אך ה-Variance עולה.", a: true, e: "$k$ גדול ⟵ סטי אימון גדולים (Bias נמוך) אך מדגמים חופפים והממוצע רגיש יותר לחריגים (Variance גבוה)." },
+  { q: "Underfitting מאופיין בשגיאה גבוהה גם על סט האימון וגם על סט ההערכה.", a: true, e: "המודל פשוט מדי ולא מצליח ללמוד אפילו את נתוני האימון — Bias גבוה." },
+  { q: "יחס הנראות (Likelihood ratio) עונה על השאלה 'פי כמה התצפית מתאימה למחלקה 1 יותר מאשר למחלקה 2'.", a: true, e: "$P(x|\\omega_1)/P(x|\\omega_2)$ הוא בדיוק יחס ההתאמה של התצפית לשתי המחלקות." },
+  { q: "שגיאת האימון (Empirical) היא אומד מוטה (Biased) של השגיאה האמיתית.", a: false, e: "היא אומד חסר הטיה: $\\mathbb{E}[\\mathrm{Err}_S(h)]=\\mathrm{Err}_{\\mathcal D}(h)$. עם זאת, בעת בחירת $h$ למזעור השגיאה האמפירית נוצרת אופטימיות-יתר." }
+]);
+</script>
+</body>
+</html>

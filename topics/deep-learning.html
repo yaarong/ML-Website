@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>למידה עמוקה · ML Study Hub</title>
+<link rel="stylesheet" href="../css/style.css">
+<script>
+window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']] }, options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] } };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="logo">∑</span> <span>ML Study Hub</span></div>
+    <nav class="nav-links"><a href="../index.html">בית</a><a href="../quiz.html" class="cta">🎲 חידון</a></nav>
+  </div>
+</header>
+
+<main class="wrap content">
+  <div class="topic-head">
+    <div class="eyebrow">נושא 09 · הרצאה 7</div>
+    <h1>🧠 למידה עמוקה</h1>
+    <p>מהניורון הבודד ל-MLP רב-שכבתי הפותר בעיות לא-לינאריות (XOR), דרך פונקציות אקטיבציה, Backpropagation, ועד רשתות קונבולוציה (CNN) עם שיתוף משקולות ו-Pooling.</p>
+  </div>
+
+  <div class="goals">
+    <h2>🎯 מטרות הנושא</h2>
+    <ul>
+      <li>להבין מדוע פרספטרון בודד נכשל ב-XOR ומדוע צריך שכבות נסתרות ואי-לינאריות.</li>
+      <li>להכיר פונקציות אקטיבציה (Sigmoid, tanh, ReLU, Leaky ReLU, ELU).</li>
+      <li>להבין Backpropagation דרך כלל השרשרת ולבצע Forward Pass מספרי.</li>
+      <li>להבין CNN: קונבולוציה, שיתוף משקולות, אדישות להזזה, Pooling וחישוב גודל פלט.</li>
+    </ul>
+  </div>
+
+  <section class="block reveal">
+    <h2>1. MLP ובעיית ה-XOR <span class="tag">מוטיבציה</span></h2>
+    <p>פרספטרון בודד הוא מסווג לינארי ולכן נכשל ב-XOR (לא פריד לינארית). הפתרון: שכבות של ניורונים עם אקטיבציה לא-לינארית. הניורון: $z_i=\sigma(w_i^Tx)$; הפלט $f_{w,u}(x)=\sigma\big(\sum_j u_j\sigma(\sum_i w_{ji}x_i)\big)$.</p>
+    <div class="warn">
+      <span class="lbl">מדוע לא פונקציה לינארית?</span> הרכבה של פונקציות לינאריות היא לינארית: $u^T(Wx)=Ax$ — מאבדים את כל היתרון. האי-לינאריות היא מה שמאפשר לרשת לפתור בעיות מורכבות.
+    </div>
+    <div class="warn">
+      <span class="lbl">מדוע לא sign?</span> נגזרת $\mathrm{sign}$ אפס בכל מקום (ולא גזירה ב-0) ⟹ אי אפשר לעדכן משקולות עם GD. לכן בוחרים פונקציות לא-לינאריות וגזירות.
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>2. פונקציות אקטיבציה <span class="tag">לא-לינארי + גזיר</span></h2>
+    <table>
+      <tr><th>פונקציה</th><th>נוסחה</th><th>תכונה</th></tr>
+      <tr><td>Sigmoid</td><td>$\frac{1}{1+e^{-x}}$</td><td>טווח $[0,1]$, סובל מדעיכת גרדיאנטים</td></tr>
+      <tr><td>tanh</td><td>$\tanh(x)$</td><td>טווח $[-1,1]$, $\tanh(0)=0$</td></tr>
+      <tr><td>ReLU</td><td>$\max(0,x)$</td><td>נגזרת 1 בחיובי, מונע דעיכה</td></tr>
+      <tr><td>Leaky ReLU</td><td>$\max(0.1x,x)$</td><td>פותר "ניורונים מתים"</td></tr>
+      <tr><td>ELU</td><td>$x$ (חיובי) / $\alpha(e^x-1)$ (שלילי)</td><td>חלק, חסום מלמטה</td></tr>
+    </table>
+  </section>
+
+  <section class="block reveal">
+    <h2>3. Backpropagation <span class="tag">כלל השרשרת</span></h2>
+    <p>מטרה: לדעת כיצד שינוי בכל משקולת $w_{ij}$ משפיע על ההפסד. לפי כלל השרשרת מפרקים למכפלת נגזרות מהסוף להתחלה:</p>
+    $$\frac{d\,loss}{dw}=\frac{\partial loss}{\partial f}\cdot\frac{df}{d\sigma}\cdot\frac{d\sigma}{dw}.$$
+    <div class="note">
+      <span class="lbl">התהליך</span><br>
+      (1) <b>Forward:</b> מזינים $x$ ומחשבים את הפלט דרך השכבות. (2) מחשבים הפסד מול $y$. (3) <b>Backward:</b> הגרדיאנט זורם מהסוף להתחלה, מחשבים $\partial L/\partial w_{ij}$ לכל משקולת. (4) מעדכנים $w_{ij}\leftarrow w_{ij}-\eta\,\partial L/\partial w_{ij}$. היתרון: מכפלות נגזרות חוזרות נשמרות ומשומשות שוב.
+    </div>
+    <div class="run">
+      <div class="step"><b>נתון:</b> קלט $x=(1,1)^T$, $W_1=\begin{pmatrix}0.8&0.2\\0.4&0.9\\0.3&0.5\end{pmatrix}$, אקטיבציה Sigmoid.</div>
+      <div class="step"><b>שלב 1 — $z_1=W_1x$:</b> $z_1=(0.8+0.2,\ 0.4+0.9,\ 0.3+0.5)=(1.0,1.3,0.8)$.</div>
+      <div class="step"><b>שלב 2 — $h_1=\sigma(z_1)$:</b> $\sigma(1.0)=0.73,\ \sigma(1.3)=0.78,\ \sigma(0.8)=0.69$. (בערך).</div>
+      <div class="step"><b>המשך:</b> $h_1$ הופך לקלט לשכבה הבאה, מוכפל ב-$W_2$ + הטיה, ושוב אקטיבציה — עד לפלט $\hat y$.</div>
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <h2>4. רשתות קונבולוציה (CNN) <span class="tag">תמונות</span></h2>
+    <p>בעיות MLP על תמונות: (1) <b>ריבוי פרמטרים</b> — תמונה $32\times32\times3=3072$ קלט; לשכבה עם 5 ניורונים צריך $5\times3072=15{,}360$ משקולות! (2) <b>לא אדיש להזזה</b> — הזזת האובייקט מפילה אותו על ניורונים אחרים לגמרי.</p>
+    <div class="note">
+      <span class="lbl">הפתרון — קונבולוציה</span><br>
+      פילטר (קרנל) קטן של משקולות סורק את התמונה ומבצע <b>שיתוף משקולות</b> — אותם משקולות בכל מיקום. זה מקנה <b>אדישות להזזה</b> (אותו פילטר מזהה תכונה בכל מקום) ומצמצם דרסטית את מספר הפרמטרים. אחרי כל שכבת קונבולוציה — אקטיבציה לא-לינארית.
+    </div>
+    <h3>Pooling</h3>
+    <p><b>Max Pooling:</b> בכל חלון $2\times2$ שומרים את הערך המקסימלי — משמר את האקטיבציה החזקה, חסין להזזות קטנות. <b>Average Pooling:</b> ממוצע החלון — מחליק. מקטין ממדים ⟵ פחות חישוב ופרמטרים.</p>
+    <div class="run">
+      <div class="step"><b>גודל פלט קונבולוציה:</b> $\;W_{out}=\big\lfloor\tfrac{W_{in}-K+2P}{S}\big\rfloor+1$.</div>
+      <div class="step"><b>נתון:</b> קלט $32\times32$, פילטר $K=5$, ריפוד $P=0$, צעד $S=1$.</div>
+      <div class="step"><b>חישוב:</b> $\lfloor\tfrac{32-5+0}{1}\rfloor+1 = 27+1 = 28$. פלט: $28\times28$.</div>
+      <div class="step"><b>לשמירת גודל:</b> עם $S=1$ בוחרים $P=\tfrac{K-1}{2}=2$ ⟹ פלט $32\times32$ (Same padding).</div>
+      <div class="step"><b>Max Pooling $2\times2$ על $\begin{pmatrix}1&3\\2&4\end{pmatrix}$:</b> $\max=4$. Average: $\tfrac{1+3+2+4}{4}=2.5$.</div>
+    </div>
+  </section>
+
+  <div id="tf" class="tf-quiz reveal"></div>
+
+  <div class="topic-nav">
+    <a class="btn" href="bayes-knn.html">→ הקודם: בייס נאיבי ו-KNN</a>
+    <a class="btn primary" href="optimization.html">הבא: אופטימיזציה ורגולריזציה ←</a>
+  </div>
+</main>
+
+<footer><div class="wrap">ML Study Hub · נושא 9 מתוך 14</div></footer>
+
+<script src="../js/site.js"></script>
+<script>
+TFQuiz.render('#tf', [
+  { q: "פרספטרון בודד אינו יכול לפתור את בעיית ה-XOR.", a: true, e: "XOR אינו פריד לינארית, ופרספטרון בודד הוא מסווג לינארי. צריך שכבה נסתרת ואי-לינאריות." },
+  { q: "הרכבה של פונקציות לינאריות ללא אקטיבציה לא-לינארית שקולה לפונקציה לינארית יחידה.", a: true, e: "$u^T(Wx)=Ax$ — מאבדים את כל היתרון של הרשת; לכן חייבים אי-לינאריות." },
+  { q: "אפשר להשתמש בפונקציית sign כאקטיבציה לאימון עם Gradient Descent.", a: false, e: "נגזרת sign אפס בכל מקום ⟹ אי אפשר לעדכן משקולות. צריך פונקציה גזירה כמו Sigmoid/ReLU." },
+  { q: "ReLU עוזרת למנוע דעיכת גרדיאנטים בזכות נגזרת 1 בתחום החיובי.", a: true, e: "בניגוד לסיגמואיד שנגזרתו קטנה, ל-ReLU נגזרת 1 בחיובי — הגרדיאנט לא דועך שם." },
+  { q: "Leaky ReLU נועדה לפתור את בעיית 'הניורונים המתים' של ReLU.", a: true, e: "שיפוע מתון בתחום השלילי מאפשר לגרדיאנט להמשיך לזרום גם שם, ומונע ניורון שתקוע על אפס." },
+  { q: "Backpropagation מחשב את הגרדיאנטים באמצעות כלל השרשרת מהסוף להתחלה.", a: true, e: "הגרדיאנט זורם אחורה, ומכפלות נגזרות חוזרות נשמרות לשימוש חוזר (יעילות)." },
+  { q: "רשת MLP מלאה על תמונות משתמשת במעט מאוד פרמטרים.", a: false, e: "להיפך — MLP על תמונה דורש המון פרמטרים (חיבור מלא), ולכן עברו ל-CNN עם שיתוף משקולות." },
+  { q: "שיתוף משקולות בקונבולוציה מקנה לרשת אדישות להזזה (Translation Invariance).", a: true, e: "אותו פילטר סורק את כל התמונה, ולכן מזהה תכונה בכל מיקום שהיא — אדישות להזזה." },
+  { q: "Max Pooling מקטין את הממדים המרחביים של מפת האקטיבציה.", a: true, e: "בכל חלון שומרים ערך אחד ⟹ המפה מתכווצת, מה שמפחית חישוב ופרמטרים בשכבות הבאות." },
+  { q: "עבור קלט $32\\times32$, פילטר $5\\times5$, $P=0$, $S=1$ — גודל הפלט הוא $28\\times28$.", a: true, e: "$\\lfloor(32-5)/1\\rfloor+1=28$." },
+  { q: "כדי לשמור על גודל התמונה עם $S=1$, בוחרים ריפוד $P=(K-1)/2$.", a: true, e: "Same padding: $P=(K-1)/2$ מבטיח $W_{out}=W_{in}$." },
+  { q: "Max Pooling על $\\begin{pmatrix}1&3\\\\2&4\\end{pmatrix}$ מחזיר 2.5.", a: false, e: "Max Pooling מחזיר את המקסימום = 4. הערך 2.5 הוא תוצאת Average Pooling." },
+  { q: "פונקציית Sigmoid סובלת מדעיכת גרדיאנטים בערכים קיצוניים.", a: true, e: "בקצוות הסיגמואיד מתשטח והנגזרת שואפת לאפס — הגרדיאנטים דועכים, מה שמאט למידה." },
+  { q: "בשלב ה-Forward Pass, הקלט זורם מההתחלה לסוף הרשת.", a: true, e: "Forward מחשב את הפלט; Backward מזרים את הגרדיאנט מהסוף להתחלה." },
+  { q: "בקונבולוציה, כל פילטר מנסה לזהות את כל התמונה בבת אחת.", a: false, e: "כל פילטר מחפש תכונה <b>ספציפית</b> (למשל קשת/קצה) באזורים מקומיים; משתמשים בהרבה פילטרים במקביל לתכונות שונות." }
+]);
+</script>
+</body>
+</html>
